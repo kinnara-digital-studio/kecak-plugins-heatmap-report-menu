@@ -1,19 +1,33 @@
 package com.kinnara.kecakplugins.heatmapreportmenu;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.joget.apps.app.model.AppDefinition;
+import org.joget.apps.app.model.PackageDefinition;
+import org.joget.apps.app.service.AppService;
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.userview.model.UserviewMenu;
 import org.joget.commons.util.LogUtil;
+import org.joget.plugin.base.PluginWebSupport;
 import org.joget.workflow.model.WorkflowActivity;
 import org.joget.workflow.model.WorkflowProcess;
 import org.joget.workflow.model.service.WorkflowManager;
+import org.joget.workflow.util.WorkflowUtil;
+import org.json.JSONArray;
 import org.springframework.context.ApplicationContext;
 import org.springframework.ui.ModelMap;
 
-public class HeatmapReportMenu extends UserviewMenu {
+public class HeatmapReportMenu extends UserviewMenu 
+		implements PluginWebSupport{
 
 	@Override
 	public String getLabel() {
@@ -110,5 +124,41 @@ public class HeatmapReportMenu extends UserviewMenu {
 	public String getDecoratedMenu() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public void webService(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
+        boolean isAdmin = WorkflowUtil.isCurrentUserInRole((String)"ROLE_ADMIN");
+        if (!isAdmin) {
+            response.sendError(401);
+            return;
+        }
+        String appId = request.getParameter("appId");
+        String appVersion = request.getParameter("appVersion");
+        ApplicationContext ac = AppUtil.getApplicationContext();
+        AppService appService = (AppService)ac.getBean("appService");
+        WorkflowManager workflowManager = (WorkflowManager)ac.getBean("workflowManager");
+        AppDefinition appDef = appService.getAppDefinition(appId, appVersion);
+        try {
+            JSONArray jsonArray = new JSONArray();
+            PackageDefinition packageDefinition = appDef.getPackageDefinition();
+            Long packageVersion = packageDefinition != null ? packageDefinition.getVersion() : new Long(1);
+            Collection<WorkflowProcess> processList = workflowManager.getProcessList(appId, packageVersion.toString());
+            HashMap<String, String> empty = new HashMap<String, String>();
+            empty.put("value", "");
+            empty.put("label", "");
+            jsonArray.put(empty);
+            for (WorkflowProcess p : processList) {
+                HashMap<String, String> option = new HashMap<String, String>();
+                option.put("value", p.getIdWithoutVersion());
+                option.put("label", p.getName() + " (" + p.getIdWithoutVersion() + ")");
+                jsonArray.put(option);
+            }
+            jsonArray.write((Writer)response.getWriter());
+        }
+        catch (Exception ex) {
+            LogUtil.error((String)this.getClass().getName(), (Throwable)ex, (String)"Get Process options Error!");
+        }	
 	}
 }
