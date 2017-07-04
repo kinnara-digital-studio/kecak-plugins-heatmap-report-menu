@@ -1,114 +1,140 @@
 package com.kinnara.kecakplugins.heatmapreportmenu;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.userview.model.UserviewMenu;
-import org.joget.commons.util.LogUtil;
+import org.joget.plugin.base.PluginManager;
 import org.joget.workflow.model.WorkflowActivity;
 import org.joget.workflow.model.WorkflowProcess;
 import org.joget.workflow.model.service.WorkflowManager;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.springframework.context.ApplicationContext;
-import org.springframework.ui.ModelMap;
+
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class HeatmapReportMenu extends UserviewMenu {
 
-	@Override
-	public String getLabel() {
-		return getName();
-	}
+  //
+  @Override
+  public String getLabel() {
+    return getName();
+  }
 
-	@Override
-	public String getClassName() {
-		return getClass().getName();
-	}
+  @Override
+  public String getClassName() {
+    return getClass().getName();
+  }
 
-	@Override
-	public String getPropertyOptions() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+  @Override
+  public String getPropertyOptions() {
+//    return null;
+    return AppUtil.readPluginResource(getClassName(), "/properties/heatmap.json");
+  }
 
-	@Override
-	public String getName() {
-		return "Kecak Heatmap Report";
-	}
+  @Override
+  public String getName() {
+    return "Kecak Heatmap Report";
+  }
 
-	@Override
-	public String getVersion() {
-		return getClass().getPackage().getImplementationVersion();
-	}
+  @Override
+  public String getVersion() {
+    return getClass().getPackage().getImplementationVersion();
+  }
 
-	@Override
-	public String getDescription() {
-		return "Artifact ID : " + getClass().getPackage().getImplementationTitle();
-	}
+  @Override
+  public String getDescription() {
+    return "Artifact ID : " + getClass().getPackage().getImplementationTitle();
+  }
 
-	@Override
-	public String getCategory() {
-		return "Kecak Enterprise";
-	}
+  @Override
+  public String getCategory() {
+    return "Kecak Enterprise";
+  }
 
-	@Override
-	public String getIcon() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+  @Override
+  public String getIcon() {
+    // TODO Auto-generated method stub
+    return null;
+  }
 
-	@Override
-	public String getRenderPage() {
-		return null;
-	}
-	
-	@Override
-	public String getJspPage() {
-		String processId = (String)getRequestParameter("processId");
-		
-		ApplicationContext appContext = AppUtil.getApplicationContext();
-		WorkflowManager workflowManager = (WorkflowManager)appContext.getBean("workflowManager");
-		
-        // get process info
-        WorkflowProcess wfProcess = workflowManager.getRunningProcessById(processId);
+  @Override
+  public String getRenderPage() {
+    String appID = getUrl().split("/")[3];
 
-        // get process xpdl
-        byte[] xpdlBytes = workflowManager.getPackageContent(wfProcess.getPackageId(), wfProcess.getVersion());
-        if (xpdlBytes != null) {
-            String xpdl = null;
+    ApplicationContext          appContext      = AppUtil.getApplicationContext();
+    PluginManager               pluginManager   = (PluginManager) appContext.getBean("pluginManager");
+    WorkflowManager             workflowManager = (WorkflowManager) appContext.getBean("workflowManager");
+    Collection<WorkflowProcess> processList     = workflowManager.getRunningProcessList(appID, "", "", "", "", false, 0, 0);
 
-            try {
-                xpdl = new String(xpdlBytes, "UTF-8");
-            } catch (Exception e) {
-                LogUtil.debug(getClassName(), "XPDL cannot load");
-            }
-            // get running activities
-            Collection<String> runningActivityIdList = new ArrayList<String>();
-            List<WorkflowActivity> activityList = (List<WorkflowActivity>) workflowManager.getActivityList(processId, 0, -1, "id", false);
-            for (WorkflowActivity wa : activityList) {
-                if (wa.getState().indexOf("open") >= 0) {
-                    runningActivityIdList.add(wa.getActivityDefId());
-                }
-            }
-            String[] runningActivityIds = (String[]) runningActivityIdList.toArray(new String[0]);
-            
-            ModelMap map = new ModelMap();
-            map.addAttribute("wfProcess", wfProcess);
-            map.addAttribute("xpdl", xpdl);
+    JSONArray listActivity = new JSONArray();
+    String    firstKey     = "";
+    int       max          = 0;
+
+    Map<String, Integer> mapActivity = new TreeMap<>();
+    for (WorkflowProcess each : processList) {
+
+      for (WorkflowActivity workflowActivity : workflowManager.getActivityList(each.getInstanceId(), 0, 0, "", false)) {
+        if (isActivity(workflowActivity.getActivityDefId())) {
+          String name  = workflowActivity.getName().replaceAll("\\s+", "").trim();
+          int    total = mapActivity.get(name) == null ? 1 : mapActivity.get(name) + 1;
+
+          if (total > max) {
+            max = total;
+          }
+
+          mapActivity.put(name, total);
         }
+      }
 
-        return "pbuilder/pviewer.jsp";
-	}
+      if (firstKey.isEmpty()) {
+        firstKey = each.getInstanceId();
+      }
 
-	@Override
-	public boolean isHomePageSupported() {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    }
 
-	@Override
-	public String getDecoratedMenu() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    for (String key : mapActivity.keySet()) {
+      Map<String, Object> temp = new LinkedHashMap<>();
+      temp.put("key", key);
+      temp.put("value", mapActivity.get(key));
+
+      listActivity.put(new JSONObject(temp));
+    }
+
+    Map<String, Object> dataModel = new LinkedHashMap<>();
+    WorkflowProcess     wfProcess = workflowManager.getRunningProcessById(firstKey);
+    String xpdl = new String(workflowManager.getPackageContent(wfProcess.getPackageId(), wfProcess.getVersion()))
+     .replaceAll("&", "&amp;")
+     .replaceAll("<", "&lt;")
+     .replaceAll(">", "&gt;")
+     .replaceAll("\"", "&quot;")
+     .replaceAll("\'", "&apos;");
+
+    dataModel.put("wfProcess", wfProcess);
+    dataModel.put("appID", appID);
+    dataModel.put("listActivity", listActivity);
+    dataModel.put("xpdl", xpdl);
+    dataModel.put("maxActivity", max);
+    dataModel.put("className", getClassName());
+
+    return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClassName(), "/templates/heatmap.ftl", null);
+  }
+
+  @Override
+  public boolean isHomePageSupported() {
+    // TODO Auto-generated method stub
+    return true;
+  }
+
+  @Override
+  public String getDecoratedMenu() {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  public Boolean isActivity(String str) {
+    return !str.startsWith("route");
+  }
 }

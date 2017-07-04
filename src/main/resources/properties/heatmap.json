@@ -1,0 +1,24 @@
+[
+  {
+    title: 'Process ID',
+    properties: [
+      {
+        name: 'id',
+        label: 'Id',
+        type: 'hidden'
+      },
+      {
+        name: 'customId',
+        label: 'Custom ID',
+        type: 'textfield'
+      },
+      {
+        name: 'label',
+        label: 'Label',
+        type: 'textfield',
+        required: 'true'
+      }
+    ]
+  }
+]
+
