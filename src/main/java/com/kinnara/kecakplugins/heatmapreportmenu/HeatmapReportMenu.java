@@ -17,7 +17,6 @@ import java.util.TreeMap;
 
 public class HeatmapReportMenu extends UserviewMenu {
 
-  //
   @Override
   public String getLabel() {
     return getName();
@@ -30,7 +29,6 @@ public class HeatmapReportMenu extends UserviewMenu {
 
   @Override
   public String getPropertyOptions() {
-//    return null;
     return AppUtil.readPluginResource(getClassName(), "/properties/heatmap.json");
   }
 
@@ -124,7 +122,6 @@ public class HeatmapReportMenu extends UserviewMenu {
 
   @Override
   public boolean isHomePageSupported() {
-    // TODO Auto-generated method stub
     return true;
   }
 
