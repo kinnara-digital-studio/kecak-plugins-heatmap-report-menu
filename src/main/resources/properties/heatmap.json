@@ -1,6 +1,6 @@
 [
   {
-    title: 'Process ID',
+    title: 'Heatmap Report',
     properties: [
       {
         name: 'id',
@@ -17,6 +17,13 @@
         label: 'Label',
         type: 'textfield',
         required: 'true'
+      },
+      {
+      	name : 'processId',
+      	label : 'Process',
+      	type : 'selectbox',
+      	options_ajax : '[CONTEXT_PATH]/web/json/app/%s/%s/plugin/org.joget.apps.userview.lib.RunProcess/service?action=getOptions',
+      	required : 'true'
       }
     ]
   }
