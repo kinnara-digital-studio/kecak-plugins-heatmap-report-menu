@@ -3,7 +3,6 @@ package com.kinnara.kecakplugins.heatmapreportmenu;
 import org.joget.apps.app.model.AppDefinition;
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.userview.model.UserviewMenu;
-import org.joget.commons.util.LogUtil;
 import org.joget.plugin.base.PluginManager;
 import org.joget.workflow.model.WorkflowActivity;
 import org.joget.workflow.model.WorkflowProcess;
@@ -19,6 +18,7 @@ import java.util.TreeMap;
 
 public class HeatmapReportMenu extends UserviewMenu {
 
+    //
     @Override
     public String getLabel() {
         return getName();
@@ -31,10 +31,8 @@ public class HeatmapReportMenu extends UserviewMenu {
 
     @Override
     public String getPropertyOptions() {
-        AppDefinition appDef     = AppUtil.getCurrentAppDefinition();
-        String        appId      = appDef.getId();
-        String        appVersion = appDef.getVersion().toString();
-        return AppUtil.readPluginResource(getClassName(), "/properties/heatmap.json", new String[]{appId, appVersion}, false);
+//    return null;
+        return AppUtil.readPluginResource(getClassName(), "/properties/heatmap.json");
     }
 
     @Override
@@ -65,11 +63,14 @@ public class HeatmapReportMenu extends UserviewMenu {
 
     @Override
     public String getRenderPage() {
-        ApplicationContext          appContext      = AppUtil.getApplicationContext();
+        ApplicationContext appContext    = AppUtil.getApplicationContext();
+        AppDefinition      appDefinition = AppUtil.getCurrentAppDefinition();
+        String             appID         = appDefinition.getAppId();
+
         PluginManager               pluginManager   = (PluginManager) appContext.getBean("pluginManager");
         WorkflowManager             workflowManager = (WorkflowManager) appContext.getBean("workflowManager");
-        AppDefinition               appDefinition   = AppUtil.getCurrentAppDefinition();
-        Collection<WorkflowProcess> processList     = workflowManager.getRunningProcessList(appDefinition.getAppId(), getPropertyString("processId"), "", "", "", false, 0, 0);
+        Collection<WorkflowProcess> processList     = workflowManager.getRunningProcessList(appID, "", "", "", "", false, 0, 0);
+        processList.addAll(workflowManager.getCompletedProcessList(appID, "", "", "", "", false, 0, 0));
 
         JSONArray listActivity = new JSONArray();
         String    firstKey     = "";
@@ -79,7 +80,7 @@ public class HeatmapReportMenu extends UserviewMenu {
         for (WorkflowProcess each : processList) {
 
             for (WorkflowActivity workflowActivity : workflowManager.getActivityList(each.getInstanceId(), 0, 0, "", false)) {
-                if (isActivity(workflowActivity)) {
+                if (isActivity(workflowActivity.getActivityDefId())) {
                     String name  = workflowActivity.getName().replaceAll("\\s+", "").trim();
                     int    total = mapActivity.get(name) == null ? 1 : mapActivity.get(name) + 1;
 
@@ -90,7 +91,6 @@ public class HeatmapReportMenu extends UserviewMenu {
                     mapActivity.put(name, total);
                 }
             }
-
 
             if (firstKey.isEmpty()) {
                 firstKey = each.getInstanceId();
@@ -116,7 +116,7 @@ public class HeatmapReportMenu extends UserviewMenu {
          .replaceAll("\'", "&apos;");
 
         dataModel.put("wfProcess", wfProcess);
-        dataModel.put("appID", appDefinition.getAppId());
+        dataModel.put("appID", appID);
         dataModel.put("listActivity", listActivity);
         dataModel.put("xpdl", xpdl);
         dataModel.put("maxActivity", max);
@@ -135,9 +135,7 @@ public class HeatmapReportMenu extends UserviewMenu {
         return null;
     }
 
-    private Boolean isActivity(WorkflowActivity activity) {
-//    return !activity.getActivityDefId().startsWith("route");
-        LogUtil.info(getClassName(), "activity [" + activity.getActivityDefId() + "] type [" + activity.getType() + "]");
-        return activity.getType() != null && activity.getType().equals(WorkflowActivity.TYPE_NORMAL);
+    public Boolean isActivity(String str) {
+        return !str.startsWith("route");
     }
 }
