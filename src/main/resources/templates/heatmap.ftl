@@ -78,12 +78,12 @@
                     data: points
                 };
 
-                console.log(data);
-
+                $('#canvas').css('zoom', '50%');
                 var heatmapInstance = h337.create({
                     container: document.querySelector('#canvas')
                 });
                 heatmapInstance.setData(data);
+                $('#canvas').css('zoom', '100%');
 
                 $(".quickEdit").css("z-index", 9);
             });
