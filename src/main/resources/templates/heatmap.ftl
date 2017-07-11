@@ -84,18 +84,13 @@
                     container: document.querySelector('#canvas')
                 });
                 heatmapInstance.setData(data);
+
+                $(".quickEdit").css("z-index", 9);
             });
 
         }
     });
 </script>
-
-<style>
-    .quickEdit {
-        z-index : 999;
-    }
-</style>
-
 <#--<div id="builder-message"></div>-->
 <#--<div id="builder-screenshot"></div>-->
 
