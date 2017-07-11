@@ -90,6 +90,12 @@
     });
 </script>
 
+<style>
+    .quickEdit {
+        z-index : 999;
+    }
+</style>
+
 <#--<div id="builder-message"></div>-->
 <#--<div id="builder-screenshot"></div>-->
 
