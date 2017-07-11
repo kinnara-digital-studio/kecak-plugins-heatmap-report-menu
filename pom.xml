@@ -4,7 +4,7 @@
     <groupId>com.kinnara.kecakplugins.heatmapreportmenu</groupId>
     <artifactId>kecak-plugins-heatmap-report-menu</artifactId>
     <packaging>bundle</packaging>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
     <name>kecak-plugins-heatmap-report-menu</name>
     <url>http://www.joget.org</url>
     <build>

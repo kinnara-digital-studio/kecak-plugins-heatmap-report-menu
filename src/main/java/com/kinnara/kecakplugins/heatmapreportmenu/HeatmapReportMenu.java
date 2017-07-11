@@ -1,14 +1,20 @@
 package com.kinnara.kecakplugins.heatmapreportmenu;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.joget.apps.app.model.AppDefinition;
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.userview.model.UserviewMenu;
 import org.joget.plugin.base.PluginManager;
+import org.joget.plugin.base.PluginWebSupport;
 import org.joget.workflow.model.WorkflowActivity;
 import org.joget.workflow.model.WorkflowProcess;
 import org.joget.workflow.model.service.WorkflowManager;
@@ -16,7 +22,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.context.ApplicationContext;
 
-public class HeatmapReportMenu extends UserviewMenu {
+public class HeatmapReportMenu extends UserviewMenu implements PluginWebSupport{
 
     //
     @Override
@@ -146,4 +152,11 @@ public class HeatmapReportMenu extends UserviewMenu {
     		}
         return false;
     }
+
+	@Override
+	public void webService(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
+		
+		
+	}
 }
