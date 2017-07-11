@@ -81,7 +81,7 @@ public class HeatmapReportMenu extends UserviewMenu {
 
             for (WorkflowActivity workflowActivity : workflowManager.getActivityList(each.getInstanceId(), 0, 0, "", false)) {
                 if (isActivity(workflowActivity.getActivityDefId())) {
-                    String name  = workflowActivity.getName().replaceAll("\\s+", "").trim();
+                    String name  = workflowActivity.getActivityDefId().trim();
                     int    total = mapActivity.get(name) == null ? 1 : mapActivity.get(name) + 1;
 
                     if (total > max) {
