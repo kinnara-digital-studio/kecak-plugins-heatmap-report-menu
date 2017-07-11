@@ -1,10 +1,5 @@
 package com.kinnara.kecakplugins.heatmapreportmenu;
 
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.TreeMap;
-
 import org.joget.apps.app.model.AppDefinition;
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.userview.model.UserviewMenu;
@@ -15,6 +10,11 @@ import org.joget.workflow.model.service.WorkflowManager;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.context.ApplicationContext;
+
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class HeatmapReportMenu extends UserviewMenu {
 
@@ -31,10 +31,10 @@ public class HeatmapReportMenu extends UserviewMenu {
 
     @Override
     public String getPropertyOptions() {
-    		AppDefinition appDef = AppUtil.getCurrentAppDefinition();
-        String appId = appDef.getId();
-        String appVersion = appDef.getVersion().toString();
-        return AppUtil.readPluginResource(getClassName(), "/properties/heatmap.json", new String[] { appId, appVersion }, false);
+        AppDefinition appDef     = AppUtil.getCurrentAppDefinition();
+        String        appId      = appDef.getId();
+        String        appVersion = appDef.getVersion().toString();
+        return AppUtil.readPluginResource(getClassName(), "/properties/heatmap.json", new String[]{appId, appVersion}, false);
 
     }
 
@@ -77,22 +77,29 @@ public class HeatmapReportMenu extends UserviewMenu {
 
         JSONArray listActivity = new JSONArray();
         String    firstKey     = "";
-        int       max          = 0;
 
+        // State must not be aborted
         Map<String, Integer> mapActivity = new TreeMap<>();
+        int                  total       = 0;
         for (WorkflowProcess each : processList) {
-        		Collection<WorkflowActivity> workflowDefList = workflowManager.getProcessActivityDefinitionList(each.getId());
-        		
+
+            Collection<WorkflowActivity> workflowDefList = workflowManager.getProcessActivityDefinitionList(each.getId());
             for (WorkflowActivity workflowActivity : workflowManager.getActivityList(each.getInstanceId(), 0, 0, "", false)) {
+                //                workflowActivity.getState()
                 if (isActivity(workflowDefList, workflowActivity.getActivityDefId())) {
-                		String name  = workflowActivity.getActivityDefId().trim();
-                    int    total = mapActivity.get(name) == null ? 1 : mapActivity.get(name) + 1;
 
-                    if (total > max) {
-                        max = total;
-                    }
+//                    WorkflowActivity temp = workflowManager.getRunningActivityInfo(workflowActivity.getId());
+//
+//                    LogUtil.info(getClassName(), "Activity Def ID   : " + temp.getActivityDefId());
+//                    LogUtil.info(getClassName(), "Activity ID       : " + temp.getId());
+//                    LogUtil.info(getClassName(), "Time from created : " + Long.toString(temp.getTimeConsumingFromDateCreatedInSeconds()));
 
-                    mapActivity.put(name, total);
+                    String activityId    = workflowActivity.getActivityDefId();
+                    int    activityCount = mapActivity.get(activityId) == null ? 1 : mapActivity.get(activityId) + 1;
+
+                    mapActivity.put(activityId, activityCount);
+
+                    total++;
                 }
             }
 
@@ -105,7 +112,7 @@ public class HeatmapReportMenu extends UserviewMenu {
         for (String key : mapActivity.keySet()) {
             Map<String, Object> temp = new LinkedHashMap<>();
             temp.put("key", key);
-            temp.put("value", mapActivity.get(key));
+            temp.put("value", (double) (mapActivity.get(key) * 100) / total);
 
             listActivity.put(new JSONObject(temp));
         }
@@ -123,7 +130,6 @@ public class HeatmapReportMenu extends UserviewMenu {
         dataModel.put("appID", appID);
         dataModel.put("listActivity", listActivity);
         dataModel.put("xpdl", xpdl);
-        dataModel.put("maxActivity", max);
         dataModel.put("className", getClassName());
 
         return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClassName(), "/templates/heatmap.ftl", null);
@@ -140,10 +146,11 @@ public class HeatmapReportMenu extends UserviewMenu {
     }
 
     public Boolean isActivity(Collection<WorkflowActivity> workflowDefList, String activityDefId) {
-    		for(WorkflowActivity wfActivity : workflowDefList) {
-    			if(wfActivity.getActivityDefId().equals(activityDefId))
-    				return wfActivity.getType().equals(WorkflowActivity.TYPE_NORMAL); 
-    		}
+        for (WorkflowActivity wfActivity : workflowDefList) {
+            if (wfActivity.getActivityDefId().equals(activityDefId)) {
+                return wfActivity.getType().equals(WorkflowActivity.TYPE_NORMAL);
+            }
+        }
         return false;
     }
 }

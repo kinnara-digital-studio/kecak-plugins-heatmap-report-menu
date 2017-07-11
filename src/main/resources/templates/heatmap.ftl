@@ -74,7 +74,7 @@
                 });
 
                 var data = {
-                    max : ${maxActivity},
+                    max : 100,
                     data: points
                 };
 
