@@ -1,5 +1,10 @@
 package com.kinnara.kecakplugins.heatmapreportmenu;
 
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.TreeMap;
+
 import org.joget.apps.app.model.AppDefinition;
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.userview.model.UserviewMenu;
@@ -10,11 +15,6 @@ import org.joget.workflow.model.service.WorkflowManager;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.context.ApplicationContext;
-
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.TreeMap;
 
 public class HeatmapReportMenu extends UserviewMenu {
 
@@ -31,8 +31,11 @@ public class HeatmapReportMenu extends UserviewMenu {
 
     @Override
     public String getPropertyOptions() {
-//    return null;
-        return AppUtil.readPluginResource(getClassName(), "/properties/heatmap.json");
+    		AppDefinition appDef = AppUtil.getCurrentAppDefinition();
+        String appId = appDef.getId();
+        String appVersion = appDef.getVersion().toString();
+        return AppUtil.readPluginResource(getClassName(), "/properties/heatmap.json", new String[] { appId, appVersion }, false);
+
     }
 
     @Override
@@ -78,10 +81,11 @@ public class HeatmapReportMenu extends UserviewMenu {
 
         Map<String, Integer> mapActivity = new TreeMap<>();
         for (WorkflowProcess each : processList) {
-
+        		Collection<WorkflowActivity> workflowDefList = workflowManager.getProcessActivityDefinitionList(each.getId());
+        		
             for (WorkflowActivity workflowActivity : workflowManager.getActivityList(each.getInstanceId(), 0, 0, "", false)) {
-                if (isActivity(workflowActivity.getActivityDefId())) {
-                    String name  = workflowActivity.getActivityDefId().trim();
+                if (isActivity(workflowDefList, workflowActivity.getActivityDefId())) {
+                		String name  = workflowActivity.getActivityDefId().trim();
                     int    total = mapActivity.get(name) == null ? 1 : mapActivity.get(name) + 1;
 
                     if (total > max) {
@@ -135,7 +139,11 @@ public class HeatmapReportMenu extends UserviewMenu {
         return null;
     }
 
-    public Boolean isActivity(String str) {
-        return !str.startsWith("route");
+    public Boolean isActivity(Collection<WorkflowActivity> workflowDefList, String activityDefId) {
+    		for(WorkflowActivity wfActivity : workflowDefList) {
+    			if(wfActivity.getActivityDefId().equals(activityDefId))
+    				return wfActivity.getType().equals(WorkflowActivity.TYPE_NORMAL); 
+    		}
+        return false;
     }
 }
