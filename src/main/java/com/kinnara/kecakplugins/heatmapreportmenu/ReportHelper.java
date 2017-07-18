@@ -1,23 +1,26 @@
 package com.kinnara.kecakplugins.heatmapreportmenu;
 
-import org.joget.apps.app.service.AppUtil;
-import org.joget.apps.form.model.Element;
-import org.joget.apps.form.model.FormData;
-import org.joget.plugin.base.PluginWebSupport;
-import org.joget.workflow.model.WorkflowActivity;
-import org.joget.workflow.model.WorkflowProcess;
-import org.joget.workflow.model.service.WorkflowManager;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.springframework.context.ApplicationContext;
-
-import javax.servlet.ServletException;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+
+import javax.servlet.ServletException;
+
+import org.joget.apps.app.service.AppUtil;
+import org.joget.apps.form.model.Element;
+import org.joget.apps.form.model.FormData;
+import org.joget.plugin.base.PluginWebSupport;
+import org.joget.report.model.ReportWorkflowActivityInstance;
+import org.joget.report.service.ReportManager;
+import org.joget.workflow.model.WorkflowActivity;
+import org.joget.workflow.model.WorkflowProcess;
+import org.joget.workflow.model.service.WorkflowManager;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.springframework.context.ApplicationContext;
 
 /**
  * Created by akbar on 7/18/2017.
@@ -143,7 +146,9 @@ public class ReportHelper extends Element implements PluginWebSupport {
     public void webService(javax.servlet.http.HttpServletRequest request, javax.servlet.http.HttpServletResponse response) throws ServletException, IOException {
         appContext = AppUtil.getApplicationContext();
         workflowManager = (WorkflowManager) appContext.getBean("workflowManager");
-//        ReportManager reportManager = (ReportManager) appContext.getBean("reportManager");
+        ReportManager reportManager = (ReportManager) appContext.getBean("reportManager");
+        
+        List<ReportWorkflowActivityInstance> activityInstanceList = reportManager.getReportWorkflowActivityInstanceList(appId, appVersion, processDefId, activityDefId, sort, desc, start, rows);
 
         appID = request.getParameter("appId") == null ? "" : request.getParameter("appId");
         try {
