@@ -4,21 +4,17 @@ import org.joget.apps.app.model.AppDefinition;
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.userview.model.UserviewMenu;
 import org.joget.plugin.base.PluginManager;
-import org.joget.plugin.base.PluginWebSupport;
-import org.joget.workflow.model.WorkflowActivity;
 import org.joget.workflow.model.WorkflowProcess;
 import org.joget.workflow.model.service.WorkflowManager;
 import org.springframework.context.ApplicationContext;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
-public class HeatmapReportMenu extends UserviewMenu implements PluginWebSupport {
+public class HeatmapReportMenu extends UserviewMenu {
 
     //
     @Override
@@ -71,15 +67,25 @@ public class HeatmapReportMenu extends UserviewMenu implements PluginWebSupport 
         ApplicationContext appContext = AppUtil.getApplicationContext();
         String             appID      = AppUtil.getCurrentAppDefinition().getAppId();
 
-        PluginManager               pluginManager   = (PluginManager) appContext.getBean("pluginManager");
-        WorkflowManager             workflowManager = (WorkflowManager) appContext.getBean("workflowManager");
-        Collection<WorkflowProcess> processList     = workflowManager.getRunningProcessList(appID, "", "", "", "", false, 0, 0);
+        PluginManager   pluginManager   = (PluginManager) appContext.getBean("pluginManager");
+        WorkflowManager workflowManager = (WorkflowManager) appContext.getBean("workflowManager");
+
+        List<WorkflowProcess> processList = new ArrayList<>(workflowManager.getRunningProcessList(appID, "", "", "", "", false, 0, 0));
         processList.addAll(workflowManager.getCompletedProcessList(appID, "", "", "", "", false, 0, 0));
+
+        List<String>         listProcess = new ArrayList<>();
+        Map<String, Integer> mapProcess  = new TreeMap<>();
+
+        for (WorkflowProcess each : processList) mapProcess.put(each.getIdWithoutVersion(), 0);
+
+        for (String each : mapProcess.keySet()) listProcess.add(each);
 
         Map<String, Object> dataModel = new LinkedHashMap<>();
         dataModel.put("appID", appID);
+        dataModel.put("appVersion", AppUtil.getCurrentAppDefinition().getVersion());
         dataModel.put("className", getClassName());
         dataModel.put("dataProvider", ReportHelper.class.getName());
+        dataModel.put("processList", listProcess);
 
         return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClassName(), "/templates/heatmap.ftl", null);
     }
@@ -92,20 +98,5 @@ public class HeatmapReportMenu extends UserviewMenu implements PluginWebSupport 
     @Override
     public String getDecoratedMenu() {
         return null;
-    }
-
-    public Boolean isActivity(Collection<WorkflowActivity> workflowDefList, String activityDefId) {
-        for (WorkflowActivity wfActivity : workflowDefList) {
-            if (wfActivity.getActivityDefId().equals(activityDefId))
-                return wfActivity.getType().equals(WorkflowActivity.TYPE_NORMAL);
-        }
-        return false;
-    }
-
-    @Override
-    public void webService(HttpServletRequest request, HttpServletResponse response)
-     throws ServletException, IOException {
-
-
     }
 }
