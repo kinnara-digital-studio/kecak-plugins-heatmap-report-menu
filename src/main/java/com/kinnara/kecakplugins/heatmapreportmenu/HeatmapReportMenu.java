@@ -1,19 +1,28 @@
 package com.kinnara.kecakplugins.heatmapreportmenu;
 
+import java.io.IOException;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.TreeMap;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.joget.apps.app.model.AppDefinition;
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.userview.model.UserviewMenu;
 import org.joget.plugin.base.PluginManager;
+import org.joget.plugin.base.PluginWebSupport;
 import org.joget.workflow.model.WorkflowActivity;
 import org.joget.workflow.model.WorkflowProcess;
 import org.joget.workflow.model.service.WorkflowManager;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.springframework.context.ApplicationContext;
 
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
-public class HeatmapReportMenu extends UserviewMenu {
+public class HeatmapReportMenu extends UserviewMenu implements PluginWebSupport{
 
     //
     @Override
@@ -28,10 +37,10 @@ public class HeatmapReportMenu extends UserviewMenu {
 
     @Override
     public String getPropertyOptions() {
-        AppDefinition appDef     = AppUtil.getCurrentAppDefinition();
-        String        appId      = appDef.getId();
-        String        appVersion = appDef.getVersion().toString();
-        return AppUtil.readPluginResource(getClassName(), "/properties/heatmap.json", new String[]{appId, appVersion}, false);
+    		AppDefinition appDef = AppUtil.getCurrentAppDefinition();
+        String appId = appDef.getId();
+        String appVersion = appDef.getVersion().toString();
+        return AppUtil.readPluginResource(getClassName(), "/properties/heatmap.json", new String[] { appId, appVersion }, false);
 
     }
 
@@ -63,18 +72,65 @@ public class HeatmapReportMenu extends UserviewMenu {
 
     @Override
     public String getRenderPage() {
-        ApplicationContext appContext = AppUtil.getApplicationContext();
-        String             appID      = AppUtil.getCurrentAppDefinition().getAppId();
+        ApplicationContext appContext    = AppUtil.getApplicationContext();
+        AppDefinition      appDefinition = AppUtil.getCurrentAppDefinition();
+        String             appID         = appDefinition.getAppId();
 
         PluginManager               pluginManager   = (PluginManager) appContext.getBean("pluginManager");
         WorkflowManager             workflowManager = (WorkflowManager) appContext.getBean("workflowManager");
         Collection<WorkflowProcess> processList     = workflowManager.getRunningProcessList(appID, "", "", "", "", false, 0, 0);
         processList.addAll(workflowManager.getCompletedProcessList(appID, "", "", "", "", false, 0, 0));
 
+        JSONArray listActivity = new JSONArray();
+        String    firstKey     = "";
+        int       max          = 0;
+
+        Map<String, Integer> mapActivity = new TreeMap<>();
+        for (WorkflowProcess each : processList) {
+        		Collection<WorkflowActivity> workflowDefList = workflowManager.getProcessActivityDefinitionList(each.getId());
+        		
+            for (WorkflowActivity workflowActivity : workflowManager.getActivityList(each.getInstanceId(), 0, 0, "", false)) {
+                if (isActivity(workflowDefList, workflowActivity.getActivityDefId())) {
+                		String name  = workflowActivity.getActivityDefId().trim();
+                    int    total = mapActivity.get(name) == null ? 1 : mapActivity.get(name) + 1;
+
+                    if (total > max) {
+                        max = total;
+                    }
+
+                    mapActivity.put(name, total);
+                }
+            }
+
+            if (firstKey.isEmpty()) {
+                firstKey = each.getInstanceId();
+            }
+
+        }
+
+        for (String key : mapActivity.keySet()) {
+            Map<String, Object> temp = new LinkedHashMap<>();
+            temp.put("key", key);
+            temp.put("value", mapActivity.get(key));
+
+            listActivity.put(new JSONObject(temp));
+        }
+
         Map<String, Object> dataModel = new LinkedHashMap<>();
+        WorkflowProcess     wfProcess = workflowManager.getRunningProcessById(firstKey);
+        String xpdl = new String(workflowManager.getPackageContent(wfProcess.getPackageId(), wfProcess.getVersion()))
+         .replaceAll("&", "&amp;")
+         .replaceAll("<", "&lt;")
+         .replaceAll(">", "&gt;")
+         .replaceAll("\"", "&quot;")
+         .replaceAll("\'", "&apos;");
+
+        dataModel.put("wfProcess", wfProcess);
         dataModel.put("appID", appID);
+        dataModel.put("listActivity", listActivity);
+        dataModel.put("xpdl", xpdl);
+        dataModel.put("maxActivity", max);
         dataModel.put("className", getClassName());
-        dataModel.put("dataProvider", ReportHelper.class.getName());
 
         return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClassName(), "/templates/heatmap.ftl", null);
     }
@@ -88,4 +144,19 @@ public class HeatmapReportMenu extends UserviewMenu {
     public String getDecoratedMenu() {
         return null;
     }
+
+    public Boolean isActivity(Collection<WorkflowActivity> workflowDefList, String activityDefId) {
+    		for(WorkflowActivity wfActivity : workflowDefList) {
+    			if(wfActivity.getActivityDefId().equals(activityDefId))
+    				return wfActivity.getType().equals(WorkflowActivity.TYPE_NORMAL); 
+    		}
+        return false;
+    }
+
+	@Override
+	public void webService(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
+		
+		
+	}
 }
