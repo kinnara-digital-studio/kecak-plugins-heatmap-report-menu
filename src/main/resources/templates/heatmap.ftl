@@ -1,13 +1,20 @@
-<textarea id="xpdl" cols="240" rows="32" style="display:none">${xpdl}</textarea>
-
 <div id="pviewer-container">
-    <div id="viewport" style="margin-left: 0px">
+    <div id="viewport" style="margin-top: 0; margin-left: 0; top: 112px;">
+        Data Type:
+        <select onchange="fillHeatMap($(this).val())">
+            <option value="hitCount">Hit Count</option>
+            <option value="leadTime">Lead Time</option>
+        </select>
+
+        <hr/>
+
         <div id="canvas"></div>
     </div>
 </div>
 
 <link href="${request.contextPath}/js/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css"/>
 <link href="${request.contextPath}/pbuilder/css/pbuilder.css" rel="stylesheet"/>
+
 <script src="${request.contextPath}/js/JSONError.js"></script>
 <script src="${request.contextPath}/js/JSON.js"></script>
 <script src="${request.contextPath}/js/jquery/jquery-1.9.1.min.js"></script>
@@ -29,69 +36,64 @@
 <script src="${request.contextPath}/pbuilder/js/pbuilder.js"></script>
 <script src="${request.contextPath}/plugin/${className}/bower_components/heatmap.js-amd/build/heatmap.min.js"></script>
 <script>
+    var json    = null;
+    var heatmap = null;
+
+    function fillHeatMap(sourceType) {
+        var points = [];
+        $.each(json.activities, function (index, each) {
+            var hitCount = (each.activityHitCount * 100) / json.totalHitCount;
+            var leadTime = (each.activityLeadTime * 100) / json.totalLeadTime;
+
+            var div       = $("div#node_" + each.activityId);
+            var baseWidth = parseInt($("div.participant_handle_vertical")[0].offsetHeight);
+
+            var point = {
+                x    : baseWidth + parseInt(div.css("left").replace(/\D/g, '')),
+                y    : getOffset(div[0]).top,
+                value: sourceType === "hitCount" ? hitCount : leadTime
+            };
+            points.push(point);
+        });
+
+        var data = {
+            max : 100,
+            data: points
+        };
+
+        heatmap.setData(data);
+    }
+
     function getOffset(el) {
         el = el.getBoundingClientRect();
         return {
             left: el.left,
-            top : el.top - (el.height / 1.25)
+            top : (el.top - 112) - (el.height / 2)
         }
     }
 
     $(document).ready(function () {
-        var activities = ${listActivity};
-        var xpdl       = $("#xpdl").text();
-        var points     = [];
+        $.getJSON("${request.contextPath}/web/json/plugin/${dataProvider}/service?appId=${appID}", function (response) {
+            json                                     = response;
+            ProcessBuilder.ApiClient.baseUrl         = "${request.contextPath}";
+            ProcessBuilder.ApiClient.designerBaseUrl = "${request.contextPath}";
 
-        ProcessBuilder.ApiClient.baseUrl         = "${request.contextPath}";
-        ProcessBuilder.ApiClient.designerBaseUrl = "${request.contextPath}";
-        ProcessBuilder.Designer.setZoom(1);
-        ProcessBuilder.Designer.editable = false;
+            ProcessBuilder.Designer.setZoom(1);
+            ProcessBuilder.Designer.editable = false;
+            ProcessBuilder.Designer.init(response.XML);
 
-        if (xpdl && xpdl !== '') {
-            ProcessBuilder.Designer.init(xpdl);
-//      ProcessBuilder.Designer.setZoom(0.7);
+            ProcessBuilder.Actions.viewProcess('${appID}')
 
-            $.when(ProcessBuilder.Actions.viewProcess('${appID}')).done(function () {
-                $.each(activities, function (index, each) {
-
-                    var div = $('div').filter(function () {
-                        return ($(this).attr('title') + '').toLowerCase().indexOf((each.key + '').toLowerCase()) !== -1;
-                    });
-
-//          var div        = $("div[title='activity" + each.key + "']");
-                    var isActivity = div.hasClass("activity");
-
-                    if (isActivity) {
-                        var baseWidth = parseInt($("div.participant_handle_vertical")[0].offsetHeight);
-
-                        var point = {
-                            x    : baseWidth + parseInt(div.css("left").replace(/\D/g, '')),
-                            y    : getOffset(div[0]).top,
-                            value: each.value
-                        };
-                        points.push(point);
-                    }
-                });
-
-                var data = {
-                    max : 100,
-                    data: points
-                };
-
-                $('#canvas').css('zoom', '50%');
-                var heatmapInstance = h337.create({
-                    container: document.querySelector('#canvas')
-                });
-                heatmapInstance.setData(data);
-                $('#canvas').css('zoom', '100%');
-
-                $(".quickEdit").css("z-index", 9);
+            // Init HeatMap
+            $('#canvas').css('zoom', '50%');
+            heatmap = h337.create({
+                container: document.querySelector('#canvas')
             });
+            $('#canvas').css('zoom', '100%');
 
-        }
+            $(".quickEdit").css("z-index", 9);
+
+            fillHeatMap("hitCount")
+        });
     });
 </script>
-<#--<div id="builder-message"></div>-->
-<#--<div id="builder-screenshot"></div>-->
-
-
