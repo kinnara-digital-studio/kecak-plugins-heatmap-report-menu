@@ -84,7 +84,7 @@ public class HeatmapReportMenu extends UserviewMenu {
         dataModel.put("appID", appID);
         dataModel.put("appVersion", AppUtil.getCurrentAppDefinition().getVersion());
         dataModel.put("className", getClassName());
-        dataModel.put("dataProvider", ReportHelper.class.getName());
+        dataModel.put("dataProvider", HeatmapReportWebApi.class.getName());
         dataModel.put("processList", listProcess);
 
         return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClassName(), "/templates/heatmap.ftl", null);
