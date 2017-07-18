@@ -2,7 +2,7 @@
 <module org.jetbrains.idea.maven.project.MavenProjectsManager.isMavenModule="true" type="JAVA_MODULE" version="4">
   <component name="FacetManager">
     <facet type="Osmorc" name="OSGi">
-      <configuration manifestGenerationMode="OsmorcControlled" manifestLocation="" jarfileLocation="kecak-plugins-heatmap-report-menu-1.0.0.jar" outputPathType="CompilerOutputPath" bndFileLocation="" bundlorFileLocation="" bundleActivator="com.kinnara.kecakplugins.heatmapreportmenu.Activator" bundleSymbolicName="com.kinnara.kecakplugins.heatmapreportmenu.kecak-plugins-heatmap-report-menu" bundleVersion="1.0.0" ignoreFilePattern="" useProjectDefaultManifestFileLocation="true" alwaysRebuildBundleJAR="false" doNotSynchronizeWithMaven="false">
+      <configuration manifestGenerationMode="OsmorcControlled" manifestLocation="" jarfileLocation="kecak-plugins-heatmap-report-menu-1.1.0.jar" outputPathType="CompilerOutputPath" bndFileLocation="" bundlorFileLocation="" bundleActivator="com.kinnara.kecakplugins.heatmapreportmenu.Activator" bundleSymbolicName="com.kinnara.kecakplugins.heatmapreportmenu.kecak-plugins-heatmap-report-menu" bundleVersion="1.1.0" ignoreFilePattern="" useProjectDefaultManifestFileLocation="true" alwaysRebuildBundleJAR="false" doNotSynchronizeWithMaven="false">
         <additionalProperties>
           <property key="Export-Package" value="com.kinnara.kecakplugins.heatmapreportmenu" />
           <property key="Private-Package" value="com.kinnara.kecakplugins.heatmapreportmenu.*" />
