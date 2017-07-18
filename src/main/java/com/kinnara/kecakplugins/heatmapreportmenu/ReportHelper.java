@@ -3,8 +3,10 @@ package com.kinnara.kecakplugins.heatmapreportmenu;
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.form.model.Element;
 import org.joget.apps.form.model.FormData;
+import org.joget.commons.util.LogUtil;
 import org.joget.plugin.base.PluginWebSupport;
-import org.joget.workflow.model.WorkflowActivity;
+import org.joget.report.model.ReportWorkflowActivityInstance;
+import org.joget.report.service.ReportManager;
 import org.joget.workflow.model.WorkflowProcess;
 import org.joget.workflow.model.service.WorkflowManager;
 import org.json.JSONException;
@@ -13,7 +15,6 @@ import org.springframework.context.ApplicationContext;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -24,83 +25,26 @@ import java.util.TreeMap;
  */
 public class ReportHelper extends Element implements PluginWebSupport {
 
-    private ApplicationContext appContext;
+    private ApplicationContext applicationContext;
     private WorkflowManager    workflowManager;
-    //
-    private SimpleDateFormat          dateFormat       = new SimpleDateFormat("dd MMM yyyy (HH:mm)");
-    private String                    appID            = "";
-    private Integer                   totalHitCount    = 0;
-    private Long                      totalLeadTime    = 0l;
-    //
-    private List<String>              xmlData          = new ArrayList<>();
-    private List<WorkflowActivity>    activityList     = new ArrayList<>();
-    private List<WorkflowProcess>     processList      = new ArrayList<>();
-    private List<Map<String, Object>> activityJson     = new ArrayList<>();
-    //
-    private Map<String, ActivityInfo> filteredActivity = new TreeMap<>();
+
+    private List<String> xmlData = new ArrayList<>();
 
     //
-    //
-    //
-    private void setXMl(final WorkflowProcess workflowProcess) {
-        WorkflowProcess detailedWorkflowProcess = workflowManager.getRunningProcessById(workflowProcess.getInstanceId());
+    private void setXMl(final String workflowProcessId) {
+        WorkflowProcess detailedWorkflowProcess = workflowManager.getRunningProcessById(workflowProcessId);
 
+        LogUtil.info(getClassName(), ".");
+        LogUtil.info(getClassName(), ".");
+        LogUtil.info(getClassName(), ".");
+        LogUtil.info(getClassName(), ".");
+        LogUtil.info(getClassName(), detailedWorkflowProcess.getPackageId());
+        LogUtil.info(getClassName(), detailedWorkflowProcess.getVersion());
+        LogUtil.info(getClassName(), ".");
+        LogUtil.info(getClassName(), ".");
+        LogUtil.info(getClassName(), ".");
+        LogUtil.info(getClassName(), ".");
         xmlData.add(new String(workflowManager.getPackageContent(detailedWorkflowProcess.getPackageId(), detailedWorkflowProcess.getVersion())));
-    }
-
-    private List<WorkflowActivity> getActivities(final WorkflowProcess workflowProcess) {
-        activityList.clear();
-
-        //Loop to get list of Normal Activity & Basic Info
-        for (WorkflowActivity workflowActivity : workflowManager.getProcessActivityDefinitionList(workflowProcess.getId())) {
-            if (workflowActivity.getType() == WorkflowActivity.TYPE_NORMAL) {
-                Boolean      isNew        = filteredActivity.get(workflowActivity.getActivityDefId()) == null;
-                ActivityInfo activityInfo = isNew ? new ActivityInfo() : filteredActivity.get(workflowActivity.getActivityDefId());
-
-                activityInfo.setActivityId(workflowActivity.getActivityDefId());
-                activityInfo.setActivityName(workflowActivity.getName());
-                activityInfo.setActivityHitCount(isNew ? 0 : activityInfo.getActivityHitCount() + 1);
-
-                filteredActivity.put(workflowActivity.getActivityDefId(), activityInfo);
-            }
-        }
-
-        //Loop to get Activities based on Normal Acivity and extra info
-        for (WorkflowActivity workflowActivity : workflowManager.getActivityList(workflowProcess.getInstanceId(), 0, 0, "", false)) {
-            WorkflowActivity detail = workflowManager.getRunningActivityInfo(workflowActivity.getId());
-
-            ActivityInfo activityInfo;
-            if ((activityInfo = filteredActivity.get(workflowActivity.getActivityDefId())) != null) {
-                activityInfo.setActivityLeadTime(detail.getTimeConsumingFromDateCreatedInSeconds());
-                activityInfo.setActivityDue(workflowActivity.getLimitInSeconds());
-                activityInfo.setActivityDateCreated(dateFormat.format(workflowActivity.getCreatedTime()));
-                activityInfo.setActivityUser(detail.getAssignmentUsers());
-
-                activityList.add(workflowActivity);
-            }
-        }
-
-        //Check which activity that doesn't have created date (tool?)
-        List<String> keys = new ArrayList<>();
-        for (String key : filteredActivity.keySet()) {
-            if (filteredActivity.get(key).getActivityDateCreated().trim().isEmpty()) keys.add(key);
-        }
-
-        //Remove corresponding activity
-        for (String key : keys) {
-            filteredActivity.remove(key);
-        }
-
-        return activityList;
-    }
-
-    private List<WorkflowProcess> getProcesses(final String appID, final ProcessType processType) {
-        processList.clear();
-
-        if (processType == ProcessType.COMPLETED || processType == ProcessType.ALL) processList.addAll(workflowManager.getCompletedProcessList(appID, "", "", "", "", false, 0, 0));
-        if (processType == ProcessType.RUNNING || processType == ProcessType.ALL) processList.addAll(workflowManager.getRunningProcessList(appID, "", "", "", "", false, 0, 0));
-
-        return processList;
     }
 
     private String getXMl() {
@@ -117,40 +61,61 @@ public class ReportHelper extends Element implements PluginWebSupport {
         return xml;
     }
 
-    private String response() throws JSONException {
-        for (WorkflowProcess workflowProcess : getProcesses(appID, ProcessType.ALL)) {
-            getActivities(workflowProcess);
-            setXMl(workflowProcess);
-        }
-
-        for (String each : filteredActivity.keySet()) {
-            totalHitCount += filteredActivity.get(each).getActivityHitCount();
-            totalLeadTime += filteredActivity.get(each).getActivityLeadTime();
-            activityJson.add(filteredActivity.get(each).toJson());
-        }
-
-        JSONObject response = new JSONObject();
-        response.accumulate("AppID", appID);
-        response.accumulate("XML", getXMl());
-        response.accumulate("totalHitCount", totalHitCount);
-        response.accumulate("totalLeadTime", totalLeadTime);
-        response.accumulate("activities", activityJson);
-
-        return response.toString();
-    }
-
     @Override
     public void webService(javax.servlet.http.HttpServletRequest request, javax.servlet.http.HttpServletResponse response) throws ServletException, IOException {
-        appContext = AppUtil.getApplicationContext();
-        workflowManager = (WorkflowManager) appContext.getBean("workflowManager");
-//        ReportManager reportManager = (ReportManager) appContext.getBean("reportManager");
+        applicationContext = AppUtil.getApplicationContext();
+        workflowManager = (WorkflowManager) applicationContext.getBean("workflowManager");
 
-        appID = request.getParameter("appId") == null ? "" : request.getParameter("appId");
+        String appId      = request.getParameter("appId");
+        String appVersion = request.getParameter("appVersion");
+        String processId  = request.getParameter("processId");
+
+        ReportManager                        reportManager = (ReportManager) applicationContext.getBean("reportManager");
+        List<ReportWorkflowActivityInstance> instances     = new ArrayList<>(reportManager.getReportWorkflowActivityInstanceList(appId, appVersion, processId, null, null, null, null, null));
+
+        JSONObject                json = new JSONObject();
+        List<Map<String, Object>> list = new ArrayList<>();
+        Map<String, ActivityInfo> map  = new TreeMap<>();
+
+        int  totalHitCount = 0;
+        long totalLeadTime = 0l;
+
+        for (ReportWorkflowActivityInstance each : instances) {
+            if (each.getState().equalsIgnoreCase("closed.completed")) {
+                String  activityId = each.getReportWorkflowActivity().getActivityDefId();
+                Boolean isNew      = map.get(activityId) == null;
+
+                setXMl(each.getReportWorkflowProcessInstance().getInstanceId());
+
+                ActivityInfo activityInfo = isNew ? new ActivityInfo() : map.get(activityId);
+                activityInfo.setActivityId(activityId);
+                activityInfo.setActivityHitCount(activityInfo.getActivityHitCount() + 1);
+                activityInfo.setActivityLeadTime(each.getTimeConsumingFromCreatedTime());
+
+                totalHitCount++;
+                totalLeadTime += each.getTimeConsumingFromCreatedTime();
+
+                map.put(activityId, activityInfo);
+            }
+        }
+
+        for (String key : map.keySet()) {
+            ActivityInfo activityInfo = map.get(key);
+            activityInfo.setActivityAverageHitCount((double) (activityInfo.getActivityHitCount() * 100) / totalHitCount);
+            activityInfo.setActivityAverageLeadTime((double) (activityInfo.getActivityLeadTime() * 100) / totalLeadTime);
+
+            list.add(activityInfo.toJson());
+        }
+
         try {
-            if (!appID.isEmpty()) response.getWriter().write(response());
+            json.accumulate("XML", getXMl());
+            json.accumulate("activities", list);
         } catch (JSONException e) {
             e.printStackTrace();
         }
+
+        response.getWriter().write(json.toString());
+
 
     }
 

@@ -1,6 +1,14 @@
 <div id="pviewer-container">
     <div id="viewport" style="margin-top: 0; margin-left: 0; top: 112px;">
-        Data Type:
+        Process:
+        <select onchange="prepareHeatMap($(this).val())">
+            <option value="">Choose process</option>
+        <#list processList as each>
+            <option value="${each}">${each}</option>
+        </#list>
+        </select>
+
+        Report Type:
         <select onchange="fillHeatMap($(this).val())">
             <option value="hitCount">Hit Count</option>
             <option value="leadTime">Lead Time</option>
@@ -42,14 +50,14 @@
     function fillHeatMap(sourceType) {
         var points = [];
         $.each(json.activities, function (index, each) {
-            var hitCount = (each.activityHitCount * 100) / json.totalHitCount;
-            var leadTime = (each.activityLeadTime * 100) / json.totalLeadTime;
+            var hitCount = each.activityAverageHitCount;
+            var leadTime = each.activityAverageLeadTime;
 
             var div       = $("div#node_" + each.activityId);
             var baseWidth = parseInt($("div.participant_handle_vertical")[0].offsetHeight);
 
             var point = {
-                x    : baseWidth + parseInt(div.css("left").replace(/\D/g, '')),
+                x    : baseWidth + parseInt(div.css("left").replace('px', '')),
                 y    : getOffset(div[0]).top,
                 value: sourceType === "hitCount" ? hitCount : leadTime
             };
@@ -72,28 +80,41 @@
         }
     }
 
-    $(document).ready(function () {
-        $.getJSON("${request.contextPath}/web/json/plugin/${dataProvider}/service?appId=${appID}", function (response) {
-            json                                     = response;
-            ProcessBuilder.ApiClient.baseUrl         = "${request.contextPath}";
-            ProcessBuilder.ApiClient.designerBaseUrl = "${request.contextPath}";
+    function prepareHeatMap(processId) {
+        if (($("#select-process").val() + "").length > 0) {
+            $.getJSON("${request.contextPath}/web/json/plugin/${dataProvider}/service?appId=${appID}&appVersion=${appVersion}&processId=" + processId, function (response) {
+                json                                     = response;
+                ProcessBuilder.ApiClient.baseUrl         = "${request.contextPath}";
+                ProcessBuilder.ApiClient.designerBaseUrl = "${request.contextPath}";
 
-            ProcessBuilder.Designer.setZoom(1);
-            ProcessBuilder.Designer.editable = false;
-            ProcessBuilder.Designer.init(response.XML);
+                ProcessBuilder.Designer.setZoom(1);
+                ProcessBuilder.Designer.editable = false;
+                ProcessBuilder.Designer.init(response.XML);
 
-            ProcessBuilder.Actions.viewProcess('${appID}')
+                ProcessBuilder.Actions.viewProcess(processId);
 
-            // Init HeatMap
-            $('#canvas').css('zoom', '50%');
-            heatmap = h337.create({
-                container: document.querySelector('#canvas')
-            });
-            $('#canvas').css('zoom', '100%');
+                // Init HeatMap
+                $('#canvas').css('zoom', '50%');
+                heatmap = h337.create({
+                    container : document.querySelector('#canvas'),
+                    minOpacity: 0,
+                    maxOpacity: 0.5,
+                    blur      : 0.5,
+                    gradient  : {
+                        '.0' : 'blue',
+                        '.25': 'green',
+                        '.5' : 'yellow',
+                        '.75': 'orange',
+                        '1'  : 'red',
+                    },
+                    radius    : 50
+                });
+                $('#canvas').css('zoom', '100%');
 
-            $(".quickEdit").css("z-index", 9);
+                $(".quickEdit").css("z-index", 9);
 
-            fillHeatMap("hitCount")
-        });
-    });
+                fillHeatMap("hitCount")
+            })
+        }
+    }
 </script>
