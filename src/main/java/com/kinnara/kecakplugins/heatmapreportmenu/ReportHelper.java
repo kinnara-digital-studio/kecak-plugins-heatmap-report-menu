@@ -3,7 +3,6 @@ package com.kinnara.kecakplugins.heatmapreportmenu;
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.form.model.Element;
 import org.joget.apps.form.model.FormData;
-import org.joget.commons.util.LogUtil;
 import org.joget.plugin.base.PluginWebSupport;
 import org.joget.report.model.ReportWorkflowActivityInstance;
 import org.joget.report.service.ReportManager;
@@ -33,17 +32,6 @@ public class ReportHelper extends Element implements PluginWebSupport {
     //
     private void setXMl(final String workflowProcessId) {
         WorkflowProcess detailedWorkflowProcess = workflowManager.getRunningProcessById(workflowProcessId);
-
-        LogUtil.info(getClassName(), ".");
-        LogUtil.info(getClassName(), ".");
-        LogUtil.info(getClassName(), ".");
-        LogUtil.info(getClassName(), ".");
-        LogUtil.info(getClassName(), detailedWorkflowProcess.getPackageId());
-        LogUtil.info(getClassName(), detailedWorkflowProcess.getVersion());
-        LogUtil.info(getClassName(), ".");
-        LogUtil.info(getClassName(), ".");
-        LogUtil.info(getClassName(), ".");
-        LogUtil.info(getClassName(), ".");
         xmlData.add(new String(workflowManager.getPackageContent(detailedWorkflowProcess.getPackageId(), detailedWorkflowProcess.getVersion())));
     }
 
