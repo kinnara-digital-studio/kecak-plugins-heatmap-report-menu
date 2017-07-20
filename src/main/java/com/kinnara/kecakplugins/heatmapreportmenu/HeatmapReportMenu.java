@@ -33,7 +33,6 @@ public class HeatmapReportMenu extends UserviewMenu {
         String        appId      = appDef.getId();
         String        appVersion = appDef.getVersion().toString();
         return AppUtil.readPluginResource(getClassName(), "/properties/heatmap.json", new String[]{appId, appVersion}, false);
-
     }
 
     @Override
