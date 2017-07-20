@@ -72,19 +72,26 @@ public class HeatmapReportMenu extends UserviewMenu {
         List<WorkflowProcess> processList = new ArrayList<>(workflowManager.getRunningProcessList(appID, "", "", "", "", false, 0, 0));
         processList.addAll(workflowManager.getCompletedProcessList(appID, "", "", "", "", false, 0, 0));
 
-        List<String>         listProcess = new ArrayList<>();
-        Map<String, Integer> mapProcess  = new TreeMap<>();
+        Map<String, Map<String, String>> eliminator = new TreeMap<>();
+        for (WorkflowProcess each : processList) {
+            Map<String, String> temp = new TreeMap<>();
+            temp.put("processId", each.getIdWithoutVersion());
+            temp.put("processName", each.getName());
 
-        for (WorkflowProcess each : processList) mapProcess.put(each.getIdWithoutVersion(), 0);
+            eliminator.put(each.getIdWithoutVersion(), temp);
+        }
 
-        for (String each : mapProcess.keySet()) listProcess.add(each);
+        List<Map<String, String>> json = new ArrayList<>();
+        for (String key : eliminator.keySet()) {
+            json.add(eliminator.get(key));
+        }
 
         Map<String, Object> dataModel = new LinkedHashMap<>();
         dataModel.put("appID", appID);
         dataModel.put("appVersion", AppUtil.getCurrentAppDefinition().getVersion());
         dataModel.put("className", getClassName());
         dataModel.put("dataProvider", HeatmapReportWebApi.class.getName());
-        dataModel.put("processList", listProcess);
+        dataModel.put("processList", json);
 
         return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClassName(), "/templates/heatmap.ftl", null);
     }

@@ -1,10 +1,10 @@
 <div id="pviewer-container">
     <div id="viewport" style="margin-top: 0; margin-left: 0; top: 112px;">
         Process:
-        <select onchange="prepareHeatMap($(this).val())">
+        <select id="processList" onchange="prepareHeatMap($(this).val())">
             <option value="">Choose process</option>
         <#list processList as each>
-            <option value="${each}">${each}</option>
+            <option value="${each.processId}">${each.processName}</option>
         </#list>
         </select>
 
@@ -61,7 +61,13 @@
     var json    = null;
     var heatmap = null;
 
+    var firstTime = true;
     function fillHeatMap(sourceType) {
+        if (firstTime) {
+            $("#processList option:first").remove();
+            firstTime = false;
+        }
+
         var points = [];
         $.each(json.activities, function (index, each) {
             var hitCount = each.activityAverageHitCount;
