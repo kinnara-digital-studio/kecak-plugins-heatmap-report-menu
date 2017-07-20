@@ -16,12 +16,26 @@
 
         <hr/>
 
-        <div id="canvas"></div>
+        <div style="background: transparent;">
+            <img id="loading" src="${request.contextPath}/plugin/${className}/img/loading.gif" style="visibility: hidden;">
+            <div id="canvas" style="visibility: hidden"></div>
+        </div>
     </div>
 </div>
 
 <link href="${request.contextPath}/js/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css"/>
 <link href="${request.contextPath}/pbuilder/css/pbuilder.css" rel="stylesheet"/>
+
+<style>
+    #loading {
+        background : transparent;
+        position   : fixed;
+        top        : 50%;
+        left       : 50%;
+        transform  : translateX(-50%);
+        transform  : translateY(-50%);
+    }
+</style>
 
 <script src="${request.contextPath}/js/JSONError.js"></script>
 <script src="${request.contextPath}/js/JSON.js"></script>
@@ -82,6 +96,9 @@
 
     function prepareHeatMap(processId) {
         if (($("#select-process").val() + "").length > 0) {
+
+            $("#loading").css("visibility", "visible");
+            $("#canvas").css("visibility", "hidden");
             $.getJSON("${request.contextPath}/web/json/plugin/${dataProvider}/service?appId=${appID}&appVersion=${appVersion}&processId=" + processId, function (response) {
                 json                                     = response;
                 ProcessBuilder.ApiClient.baseUrl         = "${request.contextPath}";
@@ -113,6 +130,8 @@
 
                 $(".quickEdit").css("z-index", 9);
 
+                $("#loading").css("visibility", "hidden");
+                $("#canvas").css("visibility", "visible");
                 fillHeatMap("hitCount")
             })
         }
