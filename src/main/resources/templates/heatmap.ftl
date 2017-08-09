@@ -1,18 +1,24 @@
 <div id="pviewer-container">
     <div id="viewport" style="margin-top: 0; margin-left: 0; top: 112px;">
-        Process:
-        <select id="processList" onchange="prepareHeatMap($(this).val())">
+        <label>Process:</label>
+        <select id="processList">
             <option value="">Choose process</option>
         <#list processList as each>
             <option value="${each.processId}">${each.processName}</option>
         </#list>
         </select>
 
-        Report Type:
-        <select onchange="fillHeatMap($(this).val())">
+        <label style="margin-left:16px;">Report Type:</label>
+        <select id="reportType">
             <option value="hitCount">Hit Count</option>
             <option value="leadTime">Lead Time</option>
         </select>
+
+        <label style="margin-left:16px;">Period:</label>
+        <input name="startDate" id="dateCreatedFilter" class="datetimepicker" type="text" value="${valueFrom!?html}" placeholder="From (${dateFormat})" readonly>
+        <input name="finishDate" id="dateFinishedFilter" class="datetimepicker" type="text" value="${valueTo!?html}" placeholder="To (${dateFormat})" readonly>
+
+        <button style="margin-left:16px;" onclick="prepareHeatMap()">Show</button>
 
         <hr/>
 
@@ -23,8 +29,9 @@
     </div>
 </div>
 
-<link href="${request.contextPath}/js/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css"/>
-<link href="${request.contextPath}/pbuilder/css/pbuilder.css" rel="stylesheet"/>
+<link rel="stylesheet" type="text/css" href="${request.contextPath}/js/font-awesome/css/font-awesome.min.css"/>
+<link rel="stylesheet" type="text/css" href="${request.contextPath}/pbuilder/css/pbuilder.css"/>
+<link rel="stylesheet" type="text/css" href="${request.contextPath}/plugin/${className}/bower_components/smalot-bootstrap-datetimepicker/css/bootstrap-datetimepicker.css">
 
 <style>
     #loading {
@@ -57,12 +64,13 @@
 <script src="${request.contextPath}/web/console/i18n/pbuilder"></script>
 <script src="${request.contextPath}/pbuilder/js/pbuilder.js"></script>
 <script src="${request.contextPath}/plugin/${className}/bower_components/heatmap.js-amd/build/heatmap.min.js"></script>
+<script src="${request.contextPath}/plugin/${className}/bower_components/smalot-bootstrap-datetimepicker/js/bootstrap-datetimepicker.js"></script>
 <script>
     var json    = null;
     var heatmap = null;
 
     var firstTime = true;
-    function fillHeatMap(sourceType) {
+    function fillHeatMap() {
         if (firstTime) {
             $("#processList option:first").remove();
             firstTime = false;
@@ -70,6 +78,7 @@
 
         var points = [];
         $.each(json.activities, function (index, each) {
+            console.log(each);
             var hitCount = each.activityAverageHitCount;
             var leadTime = each.activityAverageLeadTime;
 
@@ -79,7 +88,7 @@
             var point = {
                 x    : baseWidth + parseInt(div.css("left").replace('px', '')),
                 y    : getOffset(div[0]).top,
-                value: sourceType === "hitCount" ? hitCount : leadTime
+                value: $("#reportType").val() === "hitCount" ? hitCount : leadTime
             };
             points.push(point);
         });
@@ -100,12 +109,22 @@
         }
     }
 
-    function prepareHeatMap(processId) {
-        if (($("#select-process").val() + "").length > 0) {
+    function prepareHeatMap() {
+        if (($("#process-list").val() + "").length > 0) {
 
             $("#loading").css("visibility", "visible");
             $("#canvas").css("visibility", "hidden");
-            $.getJSON("${request.contextPath}/web/json/plugin/${dataProvider}/service?appId=${appID}&appVersion=${appVersion}&processId=" + processId, function (response) {
+
+            var processId  = $("#processList").val();
+            var startDate  = $("#dateCreatedFilter").val();
+            var finishDate = $("#dateFinishedFilter").val();
+
+            startDate  = startDate || "";
+            finishDate = finishDate || "";
+
+            var urlQuery = "${request.contextPath}/web/json/plugin/${dataProvider}/service?appId=${appID}&appVersion=${appVersion}&processId=" + processId + "&startDate=" + encodeURI(startDate) + "&finishDate=" + encodeURI(finishDate);
+            console.log(urlQuery);
+            $.getJSON(urlQuery, function (response) {
                 json                                     = response;
                 ProcessBuilder.ApiClient.baseUrl         = "${request.contextPath}";
                 ProcessBuilder.ApiClient.designerBaseUrl = "${request.contextPath}";
@@ -138,8 +157,22 @@
 
                 $("#loading").css("visibility", "hidden");
                 $("#canvas").css("visibility", "visible");
-                fillHeatMap("hitCount")
+                fillHeatMap();
             })
         }
     }
+
+    $(document).ready(function () {
+        $(".datetimepicker").datetimepicker({
+            format        : "${dateFormat}",
+            autoclose     : true,
+            todayBtn      : true,
+            pickerPosition: "bottom-left",
+            minView       : 'day'
+        });
+
+        $("#dateCreatedFilter").datetimepicker().on("changeDate", function (e) {
+            $("#dateFinishedFilter").datetimepicker('setStartDate', e.date);
+        });
+    });
 </script>

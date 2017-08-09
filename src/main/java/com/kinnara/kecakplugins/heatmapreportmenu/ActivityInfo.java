@@ -1,5 +1,6 @@
 package com.kinnara.kecakplugins.heatmapreportmenu;
 
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -13,6 +14,8 @@ public class ActivityInfo {
     private Long    activityLeadTime        = 0l;
     private Double  activityAverageHitCount = 0.0;
     private Double  activityAverageLeadTime = 0.0;
+    private Date    startDate               = null;
+    private Date    finishDate              = null;
 
     public ActivityInfo() {
     }
@@ -35,6 +38,8 @@ public class ActivityInfo {
         map.put("activityId", getActivityId());
         map.put("activityAverageHitCount", getActivityAverageHitCount());
         map.put("activityAverageLeadTime", getActivityAverageLeadTime());
+        map.put("activityStartDate", getStartDate());
+        map.put("activityFinishDate", getFinishDate());
 
         return map;
     }
@@ -59,6 +64,15 @@ public class ActivityInfo {
     public Double getActivityAverageLeadTime() {
         return activityAverageLeadTime;
     }
+
+    public Date getStartDate() {
+        return startDate;
+    }
+
+    public Date getFinishDate() {
+        return finishDate;
+    }
+
     //</editor-fold>
 
     //<editor-fold desc="Setter" defaultstate="collapsed">
@@ -81,5 +95,14 @@ public class ActivityInfo {
     public void setActivityAverageLeadTime(Double activityAverageLeadTime) {
         this.activityAverageLeadTime = activityAverageLeadTime;
     }
+
+    public void setStartDate(Date startDate) {
+        this.startDate = startDate;
+    }
+
+    public void setFinishDate(Date finishDate) {
+        this.finishDate = finishDate;
+    }
+
     //</editor-fold>
 }

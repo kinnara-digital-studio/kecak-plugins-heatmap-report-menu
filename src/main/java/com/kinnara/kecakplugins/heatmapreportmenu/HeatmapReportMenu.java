@@ -16,7 +16,6 @@ import java.util.TreeMap;
 
 public class HeatmapReportMenu extends UserviewMenu {
 
-    //
     @Override
     public String getLabel() {
         return getName();
@@ -90,6 +89,7 @@ public class HeatmapReportMenu extends UserviewMenu {
         dataModel.put("appID", appID);
         dataModel.put("appVersion", AppUtil.getCurrentAppDefinition().getVersion());
         dataModel.put("className", getClassName());
+        dataModel.put("dateFormat", "yyyy-mm-dd hh:ii:ss");
         dataModel.put("dataProvider", HeatmapReportWebApi.class.getName());
         dataModel.put("processList", json);
 
