@@ -36,7 +36,7 @@ public class HeatmapReportMenu extends UserviewMenu {
 
     @Override
     public String getName() {
-        return "Kecak Heatmap Report";
+        return "Heatmap Report";
     }
 
     @Override
@@ -51,12 +51,11 @@ public class HeatmapReportMenu extends UserviewMenu {
 
     @Override
     public String getCategory() {
-        return "Kecak Enterprise";
+        return "Kecak";
     }
 
     @Override
     public String getIcon() {
-        // TODO Auto-generated method stub
         return null;
     }
 
