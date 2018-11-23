@@ -17,6 +17,29 @@
         label: 'Label',
         type: 'textfield',
         required: 'true'
+      },
+      {
+        name : 'process',
+        label : '@@userview.datalistinboxmenu.process@@',
+        type : 'selectbox',
+        required : 'true',
+        options_ajax : '[CONTEXT_PATH]/web/json/app[APP_PATH]/plugin/%s/service?action=getProcesses'
+      },
+      {
+        name : 'reportType',
+        label : 'Type',
+        type : 'selectbox',
+        required : 'true',
+        options : [
+          {
+            value : 'hitCount',
+            label : 'Hit Count'
+          },
+          {
+            value : 'leadTime',
+            label : 'Lead Time'
+          }
+        ]
       }
     ]
   }

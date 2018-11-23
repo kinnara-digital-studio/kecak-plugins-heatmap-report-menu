@@ -1,33 +1,38 @@
-<div id="pviewer-container">
-    <div id="viewport" style="margin-top: 0; margin-left: 0; top: 112px;">
-        <label>Process:</label>
-        <select id="processList">
-            <option value="">Choose process</option>
-        <#list processList as each>
-            <option value="${each.processId}">${each.processName}</option>
-        </#list>
-        </select>
 
-        <label style="margin-left:16px;">Report Type:</label>
-        <select id="reportType">
-            <option value="hitCount">Hit Count</option>
-            <option value="leadTime">Lead Time</option>
-        </select>
+    <div id="pviewer-container">
+        <div id="viewport">
+            <#--
+            <label>Process:</label>
+            <select id="processList">
+                <option value="">Choose process</option>
+            <#list processList as each>
+                <option value="${each.processId}">${each.processName}</option>
+            </#list>
+            </select>
 
-        <label style="margin-left:16px;">Period:</label>
-        <input name="startDate" id="dateCreatedFilter" class="datetimepicker" type="text" value="${valueFrom!?html}" placeholder="From (${dateFormat})" readonly>
-        <input name="finishDate" id="dateFinishedFilter" class="datetimepicker" type="text" value="${valueTo!?html}" placeholder="To (${dateFormat})" readonly>
+            <label style="margin-left:16px;">Report Type:</label>
+            <select id="reportType">
+                <option value="hitCount">Hit Count</option>
+                <option value="leadTime">Lead Time</option>
+            </select>
 
-        <button style="margin-left:16px;" onclick="prepareHeatMap()">Show</button>
 
-        <hr/>
+            <input name="process" id="process" type="hidden" value="${processId!}">
+            <input name="reportType" id="reportType" type="hidden" value="${reportType!}">
 
-        <div style="background: transparent;">
-            <img id="loading" src="${request.contextPath}/plugin/${className}/img/loading.gif" style="visibility: hidden;">
-            <div id="canvas" style="visibility: hidden"></div>
+            <label style="margin-left:16px;">Period:</label>
+            <input name="startDate" id="dateCreatedFilter" class="datetimepicker" type="text" value="${valueFrom!?html}" placeholder="From (${dateFormat})" readonly>
+            <input name="finishDate" id="dateFinishedFilter" class="datetimepicker" type="text" value="${valueTo!?html}" placeholder="To (${dateFormat})" readonly>
+
+
+            <button style="margin-left:16px;" onclick="prepareHeatMap()">Show</button>
+
+            <hr/>
+            -->
+            <div id="canvas"></div>
         </div>
     </div>
-</div>
+
 
 <link rel="stylesheet" type="text/css" href="${request.contextPath}/js/font-awesome/css/font-awesome.min.css"/>
 <link rel="stylesheet" type="text/css" href="${request.contextPath}/pbuilder/css/pbuilder.css"/>
@@ -41,14 +46,20 @@
         left       : 50%;
         transform  : translateX(-50%);
         transform  : translateY(-50%);
+    },
+
+    #viewport {
+        position: static;
+        top: 0px;
+        margin-left: 0px;
+        width: auto;
+        height: auto;
+        overflow: inherit;
     }
 </style>
 
 <script src="${request.contextPath}/js/JSONError.js"></script>
 <script src="${request.contextPath}/js/JSON.js"></script>
-<script src="${request.contextPath}/js/jquery/jquery-1.9.1.min.js"></script>
-<script src="${request.contextPath}/js/jquery/jquery-migrate-1.2.1.min.js"></script>
-<script src="${request.contextPath}/js/jquery/ui/jquery-ui-1.10.3.min.js"></script>
 <script src="${request.contextPath}/js/jquery/jquery.jeditable.js"></script>
 <script src="${request.contextPath}/pbuilder/js/jquery.jsPlumb-1.6.4-min.js"></script>
 <script src="${request.contextPath}/pbuilder/js/html2canvas-0.4.1.js"></script>
@@ -66,6 +77,7 @@
 <script src="${request.contextPath}/plugin/${className}/bower_components/heatmap.js-amd/build/heatmap.min.js"></script>
 <script src="${request.contextPath}/plugin/${className}/bower_components/smalot-bootstrap-datetimepicker/js/bootstrap-datetimepicker.js"></script>
 <script>
+    var jsonXpdl = ${jsonXpdl!};
     var json    = null;
     var heatmap = null;
 
@@ -122,15 +134,9 @@
             startDate  = startDate || "";
             finishDate = finishDate || "";
 
-            var urlQuery = "${request.contextPath}/web/json/plugin/${dataProvider}/service?appId=${appID}&appVersion=${appVersion}&processId=" + processId + "&startDate=" + encodeURI(startDate) + "&finishDate=" + encodeURI(finishDate);
-            console.log(urlQuery);
+            var urlQuery = "${request.contextPath}/web/json/plugin/${dataProvider}/service?appId=${appID}&appVersion=${appVersion}&processId=${processId!}&startDate=" + encodeURI(startDate) + "&finishDate=" + encodeURI(finishDate);
             $.getJSON(urlQuery, function (response) {
-                json                                     = response;
-                ProcessBuilder.ApiClient.baseUrl         = "${request.contextPath}";
-                ProcessBuilder.ApiClient.designerBaseUrl = "${request.contextPath}";
-
-                ProcessBuilder.Designer.setZoom(1);
-                ProcessBuilder.Designer.editable = false;
+                json = response;
                 ProcessBuilder.Designer.init(response.XML);
 
                 ProcessBuilder.Actions.viewProcess(processId);
@@ -174,5 +180,13 @@
         $("#dateCreatedFilter").datetimepicker().on("changeDate", function (e) {
             $("#dateFinishedFilter").datetimepicker('setStartDate', e.date);
         });
+
+        ProcessBuilder.ApiClient.baseUrl = ProcessBuilder.ApiClient.designerBaseUrl = "${request.contextPath}";
+        ProcessBuilder.Designer.editable = false;
+        ProcessBuilder.Designer.init(`${xpdl!}`);
+        ProcessBuilder.Designer.setZoom(0.7);
+        ProcessBuilder.Actions.viewProcess("${processId!}");
+        $("#subheader_list").css("visibility", "hidden");
+        //prepareHeatMap();
     });
 </script>

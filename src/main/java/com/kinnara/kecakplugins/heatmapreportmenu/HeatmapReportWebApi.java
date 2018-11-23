@@ -77,23 +77,25 @@ public class HeatmapReportWebApi extends Element implements PluginWebSupport {
             List<Map<String, Object>> list = new ArrayList<>();
             Map<String, ActivityInfo> map  = new TreeMap<>();
 
+            setXMl("6745_pttimah_eapproval_sij");
+
             int  totalHitCount = 0;
             long totalLeadTime = 0L;
 
             if (workflowManager != null) {
-                for (ReportWorkflowActivityInstance each : instances) {
-                    String processDefId = workflowManager.getProcessDefIdByInstanceId(each.getReportWorkflowProcessInstance().getInstanceId());
-                    WorkflowActivity activityDefinition = processDefId == null ? null : workflowManager.getProcessActivityDefinition(processDefId, each.getReportWorkflowActivity().getActivityDefId());
-                    try {
-                        Date startDate = request.getParameter("startDate") == null || request.getParameter("startDate").isEmpty() ? dateFormat.parse("1970-01-01 00:00:00") : dateFormat.parse(request.getParameter("startDate"));
-                        Date finishDate = request.getParameter("finishDate") == null || request.getParameter("finishDate").isEmpty() ? dateFormat.parse("9999-12-31 23:59:59") : dateFormat.parse(request.getParameter("finishDate      "));
+                Date startDate;
+                Date finishDate;
+                try {
+                    startDate = request.getParameter("startDate") == null || request.getParameter("startDate").isEmpty() ? dateFormat.parse("1970-01-01 00:00:00") : dateFormat.parse(request.getParameter("startDate"));
+                    finishDate = request.getParameter("finishDate") == null || request.getParameter("finishDate").isEmpty() ? dateFormat.parse("9999-12-31 23:59:59") : dateFormat.parse(request.getParameter("finishDate      "));
 
+                    for (ReportWorkflowActivityInstance each : instances) {
+                        String processDefId = workflowManager.getProcessDefIdByInstanceId(each.getReportWorkflowProcessInstance().getInstanceId());
+                        WorkflowActivity activityDefinition = processDefId == null ? null : workflowManager.getProcessActivityDefinition(processDefId, each.getReportWorkflowActivity().getActivityDefId());
                         if ("closed.completed".equals(each.getState()) && activityDefinition != null && WorkflowActivity.TYPE_NORMAL.equals(activityDefinition.getType()) && each.getStartedTime().after(startDate) && each.getFinishTime().before(finishDate)) {
                             LogUtil.info(getClassName(), "Date Started");
                             String activityId = each.getReportWorkflowActivity().getActivityDefId();
                             Boolean isNew = map.get(activityId) == null;
-
-                            setXMl(each.getReportWorkflowProcessInstance().getInstanceId());
 
                             ActivityInfo activityInfo = isNew ? new ActivityInfo() : map.get(activityId);
                             activityInfo.setActivityId(activityId);
@@ -107,9 +109,9 @@ public class HeatmapReportWebApi extends Element implements PluginWebSupport {
 
                             map.put(activityId, activityInfo);
                         }
-                    } catch (ParseException e) {
-                        LogUtil.warn(getClassName(), "ERROR : ["+e.getMessage()+"]");
                     }
+                } catch (ParseException e) {
+                    LogUtil.warn(getClassName(), "ERROR : ["+e.getMessage()+"]");
                 }
 
                 for (String key : map.keySet()) {
