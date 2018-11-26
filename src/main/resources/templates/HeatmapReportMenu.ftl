@@ -1,7 +1,7 @@
 
     <div id="pviewer-container">
         <div id="viewport">
-            <#--
+            <!--
             <label>Process:</label>
             <select id="processList">
                 <option value="">Choose process</option>
@@ -9,13 +9,13 @@
                 <option value="${each.processId}">${each.processName}</option>
             </#list>
             </select>
-
             <label style="margin-left:16px;">Report Type:</label>
             <select id="reportType">
                 <option value="hitCount">Hit Count</option>
                 <option value="leadTime">Lead Time</option>
             </select>
 
+             -->
 
             <input name="process" id="process" type="hidden" value="${processId!}">
             <input name="reportType" id="reportType" type="hidden" value="${reportType!}">
@@ -28,7 +28,7 @@
             <button style="margin-left:16px;" onclick="prepareHeatMap()">Show</button>
 
             <hr/>
-            -->
+            <img id="loading" src="${request.contextPath}/plugin/${className}/img/loading.gif" style="visibility: hidden;">
             <div id="canvas"></div>
         </div>
     </div>
@@ -40,21 +40,22 @@
 
 <style>
     #loading {
-        background : transparent;
-        position   : fixed;
-        top        : 50%;
-        left       : 50%;
-        transform  : translateX(-50%);
-        transform  : translateY(-50%);
-    },
-
+        background : transparent !important;
+        position   : fixed !important;
+        top        : 50% !important;
+        left       : 50% !important;
+        transform  : translateX(-50%) !important;
+        transform  : translateY(-50%) !important;
+    }
     #viewport {
-        position: static;
-        top: 0px;
-        margin-left: 0px;
-        width: auto;
-        height: auto;
-        overflow: inherit;
+        top: unset !important;
+        margin-left: 0px !important;
+        height: 80% !important;
+        width:80% !important;
+    }
+    ::-webkit-scrollbar {
+        width: 0px;  /* remove scrollbar space */
+        background: transparent;  /* optional: just make scrollbar invisible */
     }
 </style>
 
@@ -137,7 +138,7 @@
             var urlQuery = "${request.contextPath}/web/json/plugin/${dataProvider}/service?appId=${appID}&appVersion=${appVersion}&processId=${processId!}&startDate=" + encodeURI(startDate) + "&finishDate=" + encodeURI(finishDate);
             $.getJSON(urlQuery, function (response) {
                 json = response;
-                ProcessBuilder.Designer.init(response.XML);
+                // ProcessBuilder.Designer.init(response.XML);
 
                 ProcessBuilder.Actions.viewProcess(processId);
 

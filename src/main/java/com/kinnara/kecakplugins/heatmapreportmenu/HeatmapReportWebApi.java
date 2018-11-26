@@ -31,35 +31,35 @@ import java.util.TreeMap;
  * Created by akbar on 7/18/2017.
  */
 public class HeatmapReportWebApi extends Element implements PluginWebSupport {
-    private       List<String> xmlData    = new ArrayList<>();
+//    private       List<String> xmlData    = new ArrayList<>();
     private final DateFormat   dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     //
-    private void setXMl(final String workflowProcessId) {
-        WorkflowManager workflowManager         = (WorkflowManager) AppUtil.getApplicationContext().getBean("workflowManager");
-        WorkflowProcess detailedWorkflowProcess = workflowManager.getRunningProcessById(workflowProcessId);
+//    private void setXMl(final String workflowProcessId) {
+//        WorkflowManager workflowManager         = (WorkflowManager) AppUtil.getApplicationContext().getBean("workflowManager");
+//        WorkflowProcess detailedWorkflowProcess = workflowManager.getRunningProcessById(workflowProcessId);
+//
+//        String packageId = detailedWorkflowProcess.getPackageId();
+//        String version   = detailedWorkflowProcess.getVersion();
+//
+//        if (null != packageId && null != version) {
+//            xmlData.add(new String(workflowManager.getPackageContent(packageId, version)));
+//        }
+//    }
 
-        String packageId = detailedWorkflowProcess.getPackageId();
-        String version   = detailedWorkflowProcess.getVersion();
-
-        if (null != packageId && null != version) {
-            xmlData.add(new String(workflowManager.getPackageContent(packageId, version)));
-        }
-    }
-
-    private String getXMl() {
-        int    max = 0;
-        String xml = "";
-
-        for (String each : xmlData) {
-            if (each.length() > max) {
-                max = each.length();
-                xml = each;
-            }
-        }
-
-        return xml;
-    }
+//    private String getXMl() {
+//        int    max = 0;
+//        String xml = "";
+//
+//        for (String each : xmlData) {
+//            if (each.length() > max) {
+//                max = each.length();
+//                xml = each;
+//            }
+//        }
+//
+//        return xml;
+//    }
 
     @Override
     public void webService(javax.servlet.http.HttpServletRequest request, javax.servlet.http.HttpServletResponse response) throws ServletException, IOException {
@@ -77,7 +77,8 @@ public class HeatmapReportWebApi extends Element implements PluginWebSupport {
             List<Map<String, Object>> list = new ArrayList<>();
             Map<String, ActivityInfo> map  = new TreeMap<>();
 
-            setXMl("6745_pttimah_eapproval_sij");
+//            setXMl("6745_pttimah_eapproval_sij");
+//            setXMl(processId);
 
             int  totalHitCount = 0;
             long totalLeadTime = 0L;
@@ -87,9 +88,10 @@ public class HeatmapReportWebApi extends Element implements PluginWebSupport {
                 Date finishDate;
                 try {
                     startDate = request.getParameter("startDate") == null || request.getParameter("startDate").isEmpty() ? dateFormat.parse("1970-01-01 00:00:00") : dateFormat.parse(request.getParameter("startDate"));
-                    finishDate = request.getParameter("finishDate") == null || request.getParameter("finishDate").isEmpty() ? dateFormat.parse("9999-12-31 23:59:59") : dateFormat.parse(request.getParameter("finishDate      "));
+                    finishDate = request.getParameter("finishDate") == null || request.getParameter("finishDate").isEmpty() ? dateFormat.parse("9999-12-31 23:59:59") : dateFormat.parse(request.getParameter("finishDate"));
 
                     for (ReportWorkflowActivityInstance each : instances) {
+                        LogUtil.info(getClassName(),"Id : " + each.getReportWorkflowProcessInstance().getInstanceId());
                         String processDefId = workflowManager.getProcessDefIdByInstanceId(each.getReportWorkflowProcessInstance().getInstanceId());
                         WorkflowActivity activityDefinition = processDefId == null ? null : workflowManager.getProcessActivityDefinition(processDefId, each.getReportWorkflowActivity().getActivityDefId());
                         if ("closed.completed".equals(each.getState()) && activityDefinition != null && WorkflowActivity.TYPE_NORMAL.equals(activityDefinition.getType()) && each.getStartedTime().after(startDate) && each.getFinishTime().before(finishDate)) {
@@ -122,7 +124,7 @@ public class HeatmapReportWebApi extends Element implements PluginWebSupport {
                     list.add(activityInfo.toJson());
                 }
 
-                json.accumulate("XML", getXMl());
+//                json.accumulate("XML", getXMl());
                 json.accumulate("activities", list);
 
                 response.getWriter().write(json.toString());

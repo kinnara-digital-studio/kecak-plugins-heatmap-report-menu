@@ -1,6 +1,5 @@
 package com.kinnara.kecakplugins.heatmapreportmenu;
 
-import org.apache.commons.lang.StringEscapeUtils;
 import org.joget.apps.app.model.AppDefinition;
 import org.joget.apps.app.model.PackageDefinition;
 import org.joget.apps.app.service.AppService;
@@ -31,7 +30,6 @@ import javax.xml.transform.stream.StreamResult;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
@@ -87,8 +85,8 @@ public class HeatmapReportMenu extends UserviewMenu implements PluginWebSupport 
         PackageDefinition packageDefinition = appDefinition.getPackageDefinition();
         Long packageVersion = packageDefinition != null ? packageDefinition.getVersion() : new Long(1);
         Collection<WorkflowProcess> processList = workflowManager.getProcessList(appDefinition.getAppId(), packageVersion.toString());
-//        WorkflowProcess workflowProcess = processList.stream().peek(p -> LogUtil.info(getClassName(), "processList ["+p.getId()+"] ["+p.getIdWithoutVersion()+"]")).filter(p -> getPropertyString("process").equals(p.getIdWithoutVersion())).findFirst().orElse(null);
-        WorkflowProcess workflowProcess = workflowManager.getRunningProcessById("6745_pttimah_eapproval_sij");
+        WorkflowProcess workflowProcess = processList.stream().peek(p -> LogUtil.info(getClassName(), "processList ["+p.getId()+"] ["+p.getIdWithoutVersion()+"]")).filter(p -> getPropertyString("process").equals(p.getIdWithoutVersion())).findFirst().orElse(null);
+//        WorkflowProcess workflowProcess = workflowManager.getRunningProcessById("6745_pttimah_eapproval_sij");
 
         Map<String, Map<String, String>> eliminator = new TreeMap<>();
         for (WorkflowProcess each : processList) {
