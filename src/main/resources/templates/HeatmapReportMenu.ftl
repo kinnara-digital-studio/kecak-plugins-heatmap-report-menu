@@ -57,6 +57,9 @@
         width: 0px;  /* remove scrollbar space */
         background: transparent;  /* optional: just make scrollbar invisible */
     }
+    #canvas{
+        display:table;
+    }
 </style>
 
 <script src="${request.contextPath}/js/JSONError.js"></script>
@@ -91,18 +94,25 @@
 
         var points = [];
         $.each(json.activities, function (index, each) {
-            console.log(each);
             var hitCount = each.activityAverageHitCount;
             var leadTime = each.activityAverageLeadTime;
 
             var div       = $("div#node_" + each.activityId);
-            var baseWidth = parseInt($("div.participant_handle_vertical")[0].offsetHeight);
-
+            // var baseWidth = parseInt($("div.participant_handle_vertical")[0].offsetHeight);
+            var elBefore = div.parent().prevAll();
+            var top = 0;
+            if(elBefore.length > 0){
+                for(var i = 0; i< elBefore.length; i++){
+                    top += $(elBefore[i]).height();
+                }
+            }
             var point = {
-                x    : baseWidth + parseInt(div.css("left").replace('px', '')),
-                y    : getOffset(div[0]).top,
+                x    : parseInt(div.css("left").replace('px', '')) + (div.width()/2) + 15,
+                y    : top + parseInt(div.css("top").replace('px', '')) +  (div.height()/2) + 30,
                 value: $("#reportType").val() === "hitCount" ? hitCount : leadTime
             };
+            console.log(each);
+            console.log(point);
             points.push(point);
         });
 
@@ -118,7 +128,7 @@
         el = el.getBoundingClientRect();
         return {
             left: el.left,
-            top : (el.top - 112) - (el.height / 2)
+            top : el.top
         }
     }
 
@@ -143,7 +153,7 @@
                 ProcessBuilder.Actions.viewProcess(processId);
 
                 // Init HeatMap
-                $('#canvas').css('zoom', '50%');
+                $('#canvas').css('zoom', '70%');
                 heatmap = h337.create({
                     container : document.querySelector('#canvas'),
                     minOpacity: 0,
