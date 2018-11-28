@@ -111,8 +111,6 @@
                 y    : top + parseInt(div.css("top").replace('px', '')) +  (div.height()/2) + 30,
                 value: $("#reportType").val() === "hitCount" ? hitCount : leadTime
             };
-            console.log(each);
-            console.log(point);
             points.push(point);
         });
 
