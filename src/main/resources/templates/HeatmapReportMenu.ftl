@@ -81,12 +81,25 @@
 <script src="${request.contextPath}/plugin/${className}/bower_components/heatmap.js-amd/build/heatmap.min.js"></script>
 <script src="${request.contextPath}/plugin/${className}/bower_components/smalot-bootstrap-datetimepicker/js/bootstrap-datetimepicker.js"></script>
 <script>
+    const config = {
+         container : document.querySelector('#canvas'),
+         minOpacity: 0,
+         maxOpacity: 0.5,
+         blur      : 0.5,
+         gradient  : {
+             '.0' : 'blue',
+             '.25': 'green',
+             '.5' : 'yellow',
+             '.75': 'orange',
+             '1'  : 'red',
+         },
+         radius    : 50
+     };
     var jsonXpdl = ${jsonXpdl!};
-    var json    = null;
     var heatmap = null;
 
     var firstTime = true;
-    function fillHeatMap() {
+    function fillHeatMap(json) {
         if (firstTime) {
             $("#processList option:first").remove();
             firstTime = false;
@@ -143,36 +156,26 @@
             startDate  = startDate || "";
             finishDate = finishDate || "";
 
-            var urlQuery = "${request.contextPath}/web/json/plugin/${dataProvider}/service?appId=${appID}&appVersion=${appVersion}&processId=${processId!}&startDate=" + encodeURI(startDate) + "&finishDate=" + encodeURI(finishDate);
+            var urlQuery = "${request.contextPath}/web/json/app/${appID}/${appVersion}/plugin/${dataProvider}/service?action=getHeatmapData&processId=${processId!}&startDate=" + encodeURI(startDate) + "&finishDate=" + encodeURI(finishDate);
             $.getJSON(urlQuery, function (response) {
-                json = response;
                 // ProcessBuilder.Designer.init(response.XML);
 
                 ProcessBuilder.Actions.viewProcess(processId);
 
-                // Init HeatMap
                 $('#canvas').css('zoom', '70%');
-                heatmap = h337.create({
-                    container : document.querySelector('#canvas'),
-                    minOpacity: 0,
-                    maxOpacity: 0.5,
-                    blur      : 0.5,
-                    gradient  : {
-                        '.0' : 'blue',
-                        '.25': 'green',
-                        '.5' : 'yellow',
-                        '.75': 'orange',
-                        '1'  : 'red',
-                    },
-                    radius    : 50
-                });
+
+                if(!heatmap) {
+                    heatmap = h337.create(config);
+                }
+
                 $('#canvas').css('zoom', '100%');
 
                 $(".quickEdit").css("z-index", 9);
 
                 $("#loading").css("visibility", "hidden");
                 $("#canvas").css("visibility", "visible");
-                fillHeatMap();
+                fillHeatMap(response);
+                heatmap.repaint();
             })
         }
     }
@@ -196,6 +199,13 @@
         ProcessBuilder.Designer.setZoom(0.7);
         ProcessBuilder.Actions.viewProcess("${processId!}");
         $("#subheader_list").css("visibility", "hidden");
-        //prepareHeatMap();
+
+        // Init HeatMap
+        <#-- this confuses me, why do we need to initiate here? -->
+        $('#canvas').css('zoom', '100%');
+
+
+        h337.create(config);
+
     });
 </script>

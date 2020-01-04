@@ -15,7 +15,6 @@ public class Activator implements BundleActivator {
 
         //Register plugin here
         registrationList.add(context.registerService(HeatmapReportMenu.class.getName(), new HeatmapReportMenu(), null));
-        registrationList.add(context.registerService(HeatmapReportWebApi.class.getName(), new HeatmapReportWebApi(), null));
     }
 
     public void stop(BundleContext context) {
