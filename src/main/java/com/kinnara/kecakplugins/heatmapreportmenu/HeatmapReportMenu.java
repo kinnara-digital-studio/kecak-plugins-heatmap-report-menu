@@ -23,7 +23,6 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -49,7 +48,7 @@ public class HeatmapReportMenu extends UserviewMenu implements PluginWebSupport 
 
     @Override
     public String getLabel() {
-        return getName();
+        return "Heatmap Report";
     }
 
     @Override
@@ -64,7 +63,7 @@ public class HeatmapReportMenu extends UserviewMenu implements PluginWebSupport 
 
     @Override
     public String getName() {
-        return "Heatmap Report";
+        return getLabel() + getVersion();
     }
 
     @Override
@@ -179,6 +178,10 @@ public class HeatmapReportMenu extends UserviewMenu implements PluginWebSupport 
     @Override
     public void webService(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         try {
+            if(!"GET".equalsIgnoreCase(request.getMethod())) {
+                throw new RestApiException(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Method [" + request.getMethod() + "] is not supported");
+            }
+
             String action = getRequiredParameter(request, "action");
             switch (action) {
                 case "getProcesses":
