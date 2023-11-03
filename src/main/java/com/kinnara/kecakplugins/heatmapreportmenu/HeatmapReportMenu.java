@@ -1,5 +1,6 @@
 package com.kinnara.kecakplugins.heatmapreportmenu;
 
+import com.kinnarastudio.commons.Try;
 import org.joget.apps.app.model.AppDefinition;
 import org.joget.apps.app.model.PackageDefinition;
 import org.joget.apps.app.service.AppUtil;
@@ -44,11 +45,15 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class HeatmapReportMenu extends UserviewMenu implements PluginWebSupport {
-    private final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    public final static String LABEL = "Heatmap Report";
+    public final static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+    public final static String EARLIEST = "1970-01-01 00:00:00";
+    public final static String LATEST = "9999-12-31 23:59:59";
 
     @Override
     public String getLabel() {
-        return "Heatmap Report";
+        return LABEL;
     }
 
     @Override
@@ -63,7 +68,7 @@ public class HeatmapReportMenu extends UserviewMenu implements PluginWebSupport 
 
     @Override
     public String getName() {
-        return getLabel() + getVersion();
+        return LABEL;
     }
 
     @Override
@@ -178,7 +183,7 @@ public class HeatmapReportMenu extends UserviewMenu implements PluginWebSupport 
     @Override
     public void webService(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         try {
-            if(!"GET".equalsIgnoreCase(request.getMethod())) {
+            if (!"GET".equalsIgnoreCase(request.getMethod())) {
                 throw new RestApiException(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Method [" + request.getMethod() + "] is not supported");
             }
 
@@ -199,8 +204,8 @@ public class HeatmapReportMenu extends UserviewMenu implements PluginWebSupport 
         }
     }
 
-    private void getHeatmapData(HttpServletRequest request, HttpServletResponse response) throws RestApiException {
-        String processId  = getRequiredParameter(request, "processId");
+    protected void getHeatmapData(HttpServletRequest request, HttpServletResponse response) throws RestApiException {
+        String processId = getRequiredParameter(request, "processId");
 
         ApplicationContext applicationContext = AppUtil.getApplicationContext();
         AppDefinition appDefinition = AppUtil.getCurrentAppDefinition();
@@ -210,44 +215,44 @@ public class HeatmapReportMenu extends UserviewMenu implements PluginWebSupport 
 
         JSONObject json = new JSONObject();
         List<Map<String, Object>> list = new ArrayList<>();
-        Map<String, ActivityInfo> map  = new TreeMap<>();
+        Map<String, ActivityInfo> map = new TreeMap<>();
 
-        int  totalHitCount = 0;
+        int totalHitCount = 0;
         long totalLeadTime = 0L;
 
         if (workflowManager == null) {
             throw new RestApiException(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "WorkflowManager is null");
         }
 
-        try {
-            Date startDate = dateFormat.parse(getOptionalParameter(request, "startDate", "1970-01-01 00:00:00"));
-            Date finishDate = dateFormat.parse(getOptionalParameter(request, "finishDate", "9999-12-31 23:59:59"));
+        final Date startDate = optParameter(request, "startDate")
+                .map(Try.onFunction(dateFormat::parse))
+                .orElseGet(Try.onSupplier(() -> dateFormat.parse(EARLIEST)));
 
+        final Date finishDate = optParameter(request, "finishDate")
+                .map(Try.onFunction(dateFormat::parse))
+                .orElseGet(Try.onSupplier(() -> dateFormat.parse(LATEST)));
 
-            @Nonnull Collection<ReportWorkflowActivityInstance> instances = Optional.ofNullable(reportManager.getReportWorkflowActivityInstanceList(appDefinition.getAppId(), appDefinition.getVersion().toString(), processId, "closed.completed", startDate, finishDate, null, null, null, null))
-                    .orElseGet(ArrayList::new);
+        @Nonnull final Collection<ReportWorkflowActivityInstance> instances = Optional.ofNullable(reportManager.getReportWorkflowActivityInstanceList(appDefinition.getAppId(), appDefinition.getVersion().toString(), processId, null, null, startDate, finishDate, null, null, null, null))
+                .orElseGet(ArrayList::new);
 
-            for (ReportWorkflowActivityInstance each : instances) {
-                String processDefId = workflowManager.getProcessDefIdByInstanceId(each.getReportWorkflowProcessInstance().getInstanceId());
-                WorkflowActivity activityDefinition = processDefId == null ? null : workflowManager.getProcessActivityDefinition(processDefId, each.getReportWorkflowActivity().getActivityDefId());
-                if (activityDefinition != null && WorkflowActivity.TYPE_NORMAL.equals(activityDefinition.getType())) {
-                    String activityId = each.getReportWorkflowActivity().getActivityDefId();
+        for (ReportWorkflowActivityInstance each : instances) {
+            String processDefId = workflowManager.getProcessDefIdByInstanceId(each.getReportWorkflowProcessInstance().getInstanceId());
+            WorkflowActivity activityDefinition = processDefId == null ? null : workflowManager.getProcessActivityDefinition(processDefId, each.getReportWorkflowActivity().getActivityDefId());
+            if (activityDefinition != null && WorkflowActivity.TYPE_NORMAL.equals(activityDefinition.getType())) {
+                String activityId = each.getReportWorkflowActivity().getActivityDefId();
 
-                    ActivityInfo activityInfo = Optional.ofNullable(map.get(activityId)).orElseGet(ActivityInfo::new);
-                    activityInfo.setActivityId(activityId);
-                    activityInfo.setActivityHitCount(activityInfo.getActivityHitCount() + 1);
-                    activityInfo.setActivityLeadTime(each.getTimeConsumingFromCreatedTime());
-                    activityInfo.setStartDate(each.getStartedTime());
-                    activityInfo.setFinishDate(each.getFinishTime());
+                ActivityInfo activityInfo = Optional.ofNullable(map.get(activityId)).orElseGet(ActivityInfo::new);
+                activityInfo.setActivityId(activityId);
+                activityInfo.setActivityHitCount(activityInfo.getActivityHitCount() + 1);
+                activityInfo.setActivityLeadTime(each.getTimeConsumingFromCreatedTime());
+                activityInfo.setStartDate(each.getStartedTime());
+                activityInfo.setFinishDate(each.getFinishTime());
 
-                    totalHitCount++;
-                    totalLeadTime += each.getTimeConsumingFromCreatedTime();
+                totalHitCount++;
+                totalLeadTime += each.getTimeConsumingFromCreatedTime();
 
-                    map.put(activityId, activityInfo);
-                }
+                map.put(activityId, activityInfo);
             }
-        } catch (ParseException e) {
-            throw new RestApiException(HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
         }
 
         for (String key : map.keySet()) {
@@ -271,7 +276,7 @@ public class HeatmapReportMenu extends UserviewMenu implements PluginWebSupport 
         }
     }
 
-    private void getProcesses(HttpServletRequest request, HttpServletResponse response) throws RestApiException {
+    protected void getProcesses(HttpServletRequest request, HttpServletResponse response) throws RestApiException {
         boolean isAdmin = WorkflowUtil.isCurrentUserInRole(WorkflowUserManager.ROLE_ADMIN);
         if (!isAdmin) {
             throw new RestApiException(HttpServletResponse.SC_UNAUTHORIZED, "Current user is not admin");
@@ -279,12 +284,12 @@ public class HeatmapReportMenu extends UserviewMenu implements PluginWebSupport 
 
         JSONArray jsonArray = new JSONArray();
 
-        ApplicationContext ac = AppUtil.getApplicationContext();
-        WorkflowManager workflowManager = (WorkflowManager) ac.getBean("workflowManager");
+        ApplicationContext applicationContext = AppUtil.getApplicationContext();
+        WorkflowManager workflowManager = (WorkflowManager) applicationContext.getBean("workflowManager");
         AppDefinition appDefinition = AppUtil.getCurrentAppDefinition();
         PackageDefinition packageDefinition = appDefinition.getPackageDefinition();
-        Long packageVersion = (packageDefinition != null) ? packageDefinition.getVersion() : new Long(1);
-        Collection<WorkflowProcess> processList = workflowManager.getProcessList(appDefinition.getAppId(), packageVersion.toString());
+        long packageVersion = Optional.of(packageDefinition).map(PackageDefinition::getVersion).orElse(1L);
+        Collection<WorkflowProcess> processList = workflowManager.getProcessList(appDefinition.getAppId(), Long.toString(packageVersion));
 
         Map<String, String> empty = new HashMap<>();
         empty.put("value", "");
@@ -292,7 +297,7 @@ public class HeatmapReportMenu extends UserviewMenu implements PluginWebSupport 
         jsonArray.put(empty);
 
         for (WorkflowProcess p : processList) {
-            Map<String, String> option = new HashMap<String, String>();
+            Map<String, String> option = new HashMap<>();
             option.put("value", p.getIdWithoutVersion());
             option.put("label", p.getName() + " (" + p.getIdWithoutVersion() + ")");
             jsonArray.put(option);
@@ -324,14 +329,12 @@ public class HeatmapReportMenu extends UserviewMenu implements PluginWebSupport 
      *
      * @param request
      * @param parameterName
-     * @param defaultValue
      * @return
      */
-    private String getOptionalParameter(HttpServletRequest request, String parameterName, String defaultValue) {
+    private Optional<String> optParameter(HttpServletRequest request, String parameterName) {
         return Optional.of(request)
                 .map(r -> r.getParameter(parameterName))
-                .filter(s -> !s.isEmpty())
-                .orElse(defaultValue);
+                .filter(s -> !s.isEmpty());
     }
 
 }
