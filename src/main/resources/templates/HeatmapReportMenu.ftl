@@ -107,27 +107,38 @@
 
         var points = [];
         $.each(json.activities, function (index, each) {
-            var hitCount = each.activityAverageHitCount;
-            var leadTime = each.activityAverageLeadTime;
+            let hitCount = each.activityAverageHitCount;
+            let leadTime = each.activityAverageLeadTime;
+            let activityId = each.activityId;
+            let div = $("div#node_" + activityId);
+            // let baseWidth = parseInt($("div.participant_handle_vertical")[0].offsetHeight);
+            let elBefore = div.parent().prevAll();
+            let top = 0;
 
-            var div       = $("div#node_" + each.activityId);
-            // var baseWidth = parseInt($("div.participant_handle_vertical")[0].offsetHeight);
-            var elBefore = div.parent().prevAll();
-            var top = 0;
-            if(elBefore.length > 0){
-                for(var i = 0; i< elBefore.length; i++){
-                    top += $(elBefore[i]).height();
-                }
+            /*
+            for(let i = 0; i < elBefore.length; i++){
+                let e = elBefore[i];
+                let height = $(e).height();
+                top += height;
             }
-            var point = {
-                x    : parseInt(div.css("left").replace('px', '')) + (div.width()/2) + 15,
-                y    : top + parseInt(div.css("top").replace('px', '')) +  (div.height()/2) + 30,
-                value: $("#reportType").val() === "hitCount" ? hitCount : leadTime
+            */
+
+            // elBefore.map(e => $(e)).map($e => $e.height()).filter(e => e).forEach(e => top += e) ;
+
+            let width = div.width();
+            let height = div.height();
+
+            let point = {
+                x : parseInt(div.css("left").replace('px', '')) + (width / 2) + 15,
+                y : top + parseInt(div.css("top").replace('px', '')) + (height / 2) + 30,
+                // value: $("#reportType").val() === "hitCount" ? hitCount : leadTime
+                value : hitCount
             };
+
             points.push(point);
         });
 
-        var data = {
+        let data = {
             max : 100,
             data: points
         };
@@ -136,16 +147,17 @@
     }
 
     function getOffset(el) {
-        el = el.getBoundingClientRect();
+        let rect = el.getBoundingClientRect();
         return {
-            left: el.left,
-            top : el.top
-        }
+            left: rect.left,
+            top : rect.top
+        };
     }
 
     function prepareHeatMap() {
-        if (($("#process-list").val() + "").length > 0) {
+        let processList = $("#process-list").val();
 
+        if ((processList + "").length > 0) {
             $("#loading").css("visibility", "visible");
             $("#canvas").css("visibility", "hidden");
 
