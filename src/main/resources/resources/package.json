@@ -1,0 +1,9 @@
+{
+  "name": "kecak-plugins-heatmap-report-menu",
+  "version": "3.0.0",
+  "author": "kinnarastudio.com",
+  "license": "ISC",
+  "dependencies": {
+    "heatmap.js": "2.0.5"
+  }
+}

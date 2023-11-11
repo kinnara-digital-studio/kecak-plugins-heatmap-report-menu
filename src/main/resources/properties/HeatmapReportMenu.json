@@ -1,0 +1,47 @@
+[
+  {
+    "title": "@@userview.heatmap.title@@",
+    "properties": [
+      {
+        "name": "id",
+        "label": "Id",
+        "type": "hidden"
+      },
+      {
+        "name": "customId",
+        "label": "@@userview.heatmap.customId@@",
+        "type": "textfield"
+      },
+      {
+        "name": "label",
+        "label": "@@userview.heatmap.label@@",
+        "type": "textfield",
+        "required": "true"
+      },
+      {
+        "name" : "process",
+        "label" : "@@userview.heatmap.process@@",
+        "type" : "selectbox",
+        "required" : "true",
+        "options_ajax" : "[CONTEXT_PATH]/web/json/app[APP_PATH]/plugin/%s/service?action=getProcesses"
+      },
+      {
+        "name" : "reportType",
+        "label" : "@@userview.heatmap.reportType@@",
+        "type" : "selectbox",
+        "required" : "true",
+        "options" : [
+          {
+            "value" : "hitCount",
+            "label" : "@@userview.heatmap.reportType.hitCount@@"
+          },
+          {
+            "value" : "leadTime",
+            "label" : "@@userview.heatmap.reportType.leadTime@@"
+          }
+        ]
+      }
+    ]
+  }
+]
+

@@ -1,7 +1,7 @@
 package com.kinnara.kecakplugins.heatmapreportmenu;
 
 public class RestApiException extends Exception {
-    private int httpErrorCode;
+    private final int httpErrorCode;
 
     public RestApiException(int errorCode, String message) {
         super(message);

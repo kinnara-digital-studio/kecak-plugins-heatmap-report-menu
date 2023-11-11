@@ -7,6 +7,11 @@
     <version>3.0.0</version>
     <name>kecak-plugins-heatmap-report-menu</name>
     <url>http://www.kecak.org</url>
+    <scm>
+        <connection>scm:git:ssh://git@gitlab.com:kinnarastudio/kecak-plugins-heatmap-report-menu.git</connection>
+        <developerConnection>scm:git:ssh://git@gitlab.com:kinnarastudio/kecak-plugins-heatmap-report-menu.git</developerConnection>
+        <url>ssh://git@gitlab.com:kinnarastudio/kecak-plugins-heatmap-report-menu.git</url>
+    </scm>
     <build>
         <plugins>
             <plugin>
@@ -81,11 +86,31 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <executable>bower</executable>
+                    <executable>npm</executable>
                     <arguments>
                         <argument>install</argument>
                     </arguments>
                     <workingDirectory>${project.basedir}/src/main/resources/resources</workingDirectory>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>buildnumber-maven-plugin</artifactId>
+                <version>1.4</version>
+                <executions>
+                    <execution>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>create</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <doCheck>false</doCheck>
+                    <doUpdate>false</doUpdate>
+                    <revisionOnScmFailure>0</revisionOnScmFailure>
+                    <shortRevisionLength>8</shortRevisionLength>
+                    <timestampFormat>{0,date,yyyy}</timestampFormat>
                 </configuration>
             </plugin>
         </plugins>
