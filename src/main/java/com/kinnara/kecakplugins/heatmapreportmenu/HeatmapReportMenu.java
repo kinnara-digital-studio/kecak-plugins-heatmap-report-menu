@@ -33,7 +33,6 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -198,7 +197,6 @@ public class HeatmapReportMenu extends UserviewMenu implements PluginWebSupport 
         AppDefinition appDefinition = AppUtil.getCurrentAppDefinition();
         WorkflowManager workflowManager = (WorkflowManager) applicationContext.getBean("workflowManager");
         ReportManager reportManager = (ReportManager) applicationContext.getBean("reportManager");
-        ReportWorkflowActivityInstanceDao reportWorkflowActivityInstanceDao = (ReportWorkflowActivityInstanceDao) applicationContext.getBean("reportWorkflowActivityInstanceDao");
 
         JSONObject json = new JSONObject();
         List<Map<String, Object>> list = new ArrayList<>();
