@@ -10,7 +10,6 @@ import org.joget.commons.util.LogUtil;
 import org.joget.commons.util.SecurityUtil;
 import org.joget.plugin.base.PluginManager;
 import org.joget.plugin.base.PluginWebSupport;
-import org.joget.report.dao.ReportWorkflowActivityInstanceDao;
 import org.joget.report.model.ReportWorkflowActivityInstance;
 import org.joget.report.service.ReportManager;
 import org.joget.workflow.model.WorkflowActivity;
