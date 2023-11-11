@@ -1,5 +1,7 @@
 package com.kinnara.kecakplugins.heatmapreportmenu;
 
+import com.kinnarastudio.commons.Try;
+import com.kinnarastudio.commons.jsonstream.JSONCollectors;
 import org.joget.apps.app.model.AppDefinition;
 import org.joget.apps.app.model.PackageDefinition;
 import org.joget.apps.app.service.AppUtil;
@@ -7,27 +9,37 @@ import org.joget.apps.userview.model.UserviewMenu;
 import org.joget.commons.util.LogUtil;
 import org.joget.commons.util.SecurityUtil;
 import org.joget.plugin.base.PluginManager;
+import org.joget.plugin.base.PluginWebSupport;
 import org.joget.report.dao.ReportWorkflowActivityInstanceDao;
 import org.joget.report.model.ReportWorkflowActivityInstance;
 import org.joget.report.service.ReportManager;
 import org.joget.workflow.model.WorkflowActivity;
 import org.joget.workflow.model.WorkflowProcess;
 import org.joget.workflow.model.service.WorkflowManager;
+import org.joget.workflow.model.service.WorkflowUserManager;
 import org.joget.workflow.util.WorkflowUtil;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.context.ApplicationContext;
 
 import javax.annotation.Nonnull;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-public class HeatmapReportMenu extends UserviewMenu {
+/**
+ * Heatmap Report Menu
+ */
+public class HeatmapReportMenu extends UserviewMenu implements PluginWebSupport {
     public final static String LABEL = "Heatmap Report";
     public final static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     public final static String BEGIN_OF_TIME = "1970-01-01 00:00:00";
@@ -80,6 +92,7 @@ public class HeatmapReportMenu extends UserviewMenu {
     public String getRenderPage() {
         ApplicationContext appContext = AppUtil.getApplicationContext();
         AppDefinition appDefinition = AppUtil.getCurrentAppDefinition();
+        HttpServletRequest request = WorkflowUtil.getHttpServletRequest();
 
         PluginManager pluginManager = (PluginManager) appContext.getBean("pluginManager");
         WorkflowManager workflowManager = (WorkflowManager) appContext.getBean("workflowManager");
@@ -87,7 +100,7 @@ public class HeatmapReportMenu extends UserviewMenu {
         Long packageVersion = packageDefinition != null ? packageDefinition.getVersion() : new Long(1);
         Collection<WorkflowProcess> processList = workflowManager.getProcessList(appDefinition.getAppId(), packageVersion.toString());
 
-        Map<String, Map<String, String>> eliminator = new TreeMap<>();
+        Map<String, Map<String, String>> eliminator = new HashMap<>();
         for (WorkflowProcess each : processList) {
             Map<String, String> temp = new TreeMap<>();
 
@@ -109,14 +122,15 @@ public class HeatmapReportMenu extends UserviewMenu {
         dataModel.put("dateFormat", "yyyy-mm-dd hh:ii:ss");
         dataModel.put("dataProvider", getClassName());
         dataModel.put("processList", json);
-        dataModel.put("reportType", getPropertyString("reportType"));
+
+        String reportType = getPropertyString("reportType");
+        dataModel.put("reportType", reportType);
 
         WorkflowProcess workflowProcess = processList.stream()
                 .filter(p -> getPropertyString("process").equals(p.getIdWithoutVersion()))
                 .findAny()
                 .orElse(null);
 
-        HttpServletRequest request = WorkflowUtil.getHttpServletRequest();
         dataModel.put("request", request);
 
         if (workflowProcess != null) {
@@ -157,6 +171,26 @@ public class HeatmapReportMenu extends UserviewMenu {
     @Override
     public String getDecoratedMenu() {
         return null;
+    }
+
+    @Override
+    public void webService(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        try {
+            if (!"GET".equalsIgnoreCase(request.getMethod())) {
+                throw new RestApiException(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Method [" + request.getMethod() + "] is not supported");
+            }
+
+            String action = getRequiredParameter(request, "action");
+            if ("getProcesses".equalsIgnoreCase(action)) {
+                JSONArray jsonArray = getProcesses();
+                response.getWriter().write(jsonArray.toString());
+            } else {
+                throw new RestApiException(HttpServletResponse.SC_BAD_REQUEST, String.format("Action [%s] not supported", action));
+            }
+        } catch (RestApiException e) {
+            LogUtil.error(getClassName(), e, e.getMessage());
+            response.sendError(e.getErrorCode(), e.getMessage());
+        }
     }
 
     protected JSONObject getHeatmapData(String processId, Date startDate, Date finishDate) throws RestApiException {
@@ -215,6 +249,57 @@ public class HeatmapReportMenu extends UserviewMenu {
         }
 
         return json;
+    }
+
+    protected JSONArray getProcesses() throws RestApiException {
+        boolean isAdmin = WorkflowUtil.isCurrentUserInRole(WorkflowUserManager.ROLE_ADMIN);
+        if (!isAdmin) {
+            throw new RestApiException(HttpServletResponse.SC_UNAUTHORIZED, "Current user is not admin");
+        }
+
+        ApplicationContext applicationContext = AppUtil.getApplicationContext();
+        WorkflowManager workflowManager = (WorkflowManager) applicationContext.getBean("workflowManager");
+        AppDefinition appDefinition = AppUtil.getCurrentAppDefinition();
+        PackageDefinition packageDefinition = appDefinition.getPackageDefinition();
+        long packageVersion = Optional.of(packageDefinition).map(PackageDefinition::getVersion).orElse(1L);
+        Collection<WorkflowProcess> processList = workflowManager.getProcessList(appDefinition.getAppId(), Long.toString(packageVersion));
+
+        return Optional.ofNullable(processList)
+                .map(Collection::stream)
+                .orElseGet(Stream::empty)
+                .map(Try.onFunction(p -> {
+                    JSONObject option = new JSONObject();
+                    option.put("value", p.getIdWithoutVersion());
+                    option.put("label", p.getName() + " (" + p.getIdWithoutVersion() + ")");
+                    return option;
+                }))
+                .collect(JSONCollectors.toJSONArray());
+    }
+
+    /**
+     * Get required parameter or throw {@link RestApiException}
+     *
+     * @param request
+     * @param parameterName
+     * @return
+     * @throws RestApiException
+     */
+    protected String getRequiredParameter(HttpServletRequest request, String parameterName) throws RestApiException {
+        return optParameter(request, parameterName)
+                .orElseThrow(() -> new RestApiException(HttpServletResponse.SC_BAD_REQUEST, String.format("Required parameter [%s] is not supplied", parameterName)));
+    }
+
+    /**
+     * Get optional parameter
+     *
+     * @param request
+     * @param parameterName
+     * @return
+     */
+    protected Optional<String> optParameter(HttpServletRequest request, String parameterName) {
+        return Optional.of(request)
+                .map(r -> r.getParameter(parameterName))
+                .filter(s -> !s.isEmpty());
     }
 
 }

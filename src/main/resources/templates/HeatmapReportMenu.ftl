@@ -21,9 +21,12 @@
 <#if locale! != ''>
     <script type="text/javascript" src="${request.contextPath}/js/jquery/ui/i18n/jquery.ui.datepicker-${locale}.js"></script>
 </#if>
+
 <script type="text/javascript" src="${request.contextPath}/plugin/org.joget.apps.form.lib.DatePicker/js/jquery.placeholder.min.js"></script>
 <link rel="stylesheet" href="${request.contextPath}/plugin/org.joget.apps.form.lib.DatePicker/css/datePicker.css" />
 <link rel="stylesheet" href="${request.contextPath}/plugin/org.joget.apps.form.lib.DatePicker/css/jquery-ui-timepicker-addon.css" />
+<link rel="stylesheet" type="text/css" href="${request.contextPath}/js/font-awesome/css/font-awesome.min.css"/>
+<link rel="stylesheet" type="text/css" href="${request.contextPath}/pbuilder/css/pbuilder.css"/>
 <script type="text/javascript" src="${request.contextPath}/plugin/org.joget.apps.form.lib.DatePicker/js/jquery-ui-timepicker-addon.js"></script>
 <script type="text/javascript" src="${request.contextPath}/plugin/org.joget.apps.form.lib.DatePicker/js/jquery.custom.datepicker.js"></script>
 
@@ -44,9 +47,6 @@
         });
     });
 </script>
-
-<link rel="stylesheet" type="text/css" href="${request.contextPath}/js/font-awesome/css/font-awesome.min.css"/>
-<link rel="stylesheet" type="text/css" href="${request.contextPath}/pbuilder/css/pbuilder.css"/>
 
 <style>
     #loading {
@@ -155,8 +155,7 @@
             let point = {
                 x : Math.floor(parseInt(div.css("left").replace('px', '')) + (width / 2) + 15),
                 y : Math.floor(top + parseInt(div.css("top").replace('px', '')) + (height / 2) + 30),
-                // value: $("#reportType").val() === "hitCount" ? hitCount : leadTime
-                value : hitCount
+                value : ${reportType!'hitCount'}
             };
 
             points.push(point);

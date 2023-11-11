@@ -30,6 +30,7 @@
         "label" : "@@userview.heatmap.reportType@@",
         "type" : "selectbox",
         "required" : "true",
+        "value": "hitCount",
         "options" : [
           {
             "value" : "hitCount",
