@@ -198,8 +198,7 @@ public class HeatmapReportMenu extends UserviewMenu implements PluginWebSupport 
         ReportManager reportManager = (ReportManager) applicationContext.getBean("reportManager");
 
         JSONObject json = new JSONObject();
-        List<Map<String, Object>> list = new ArrayList<>();
-        Map<String, ActivityInfo> map = new TreeMap<>();
+        Map<String, ActivityInfo> map = new HashMap<>();
 
         int totalHitCount = 0;
         long totalLeadTime = 0L;
@@ -208,7 +207,7 @@ public class HeatmapReportMenu extends UserviewMenu implements PluginWebSupport 
             throw new RestApiException(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "WorkflowManager is null");
         }
 
-        @Nonnull final Collection<ReportWorkflowActivityInstance> instances = Optional.ofNullable(reportManager.getReportWorkflowActivityInstanceList(appDefinition.getAppId(), appDefinition.getVersion().toString(), processId, null, null, startDate, finishDate, null, null, null, null))
+        @Nonnull final Collection<ReportWorkflowActivityInstance> instances = Optional.ofNullable(reportManager.getReportWorkflowActivityInstanceList(appDefinition.getAppId(), null, processId, null, null, null, null, null, null, null, null))
                 .orElseGet(ArrayList::new);
 
         for (ReportWorkflowActivityInstance each : instances) {
@@ -231,11 +230,10 @@ public class HeatmapReportMenu extends UserviewMenu implements PluginWebSupport 
             }
         }
 
-        for (String key : map.keySet()) {
-            ActivityInfo activityInfo = map.get(key);
+        List<Map<String, Object>> list = new ArrayList<>();
+        for (ActivityInfo activityInfo : map.values()) {
             activityInfo.setActivityAverageHitCount((double) (activityInfo.getActivityHitCount() * 100) / totalHitCount);
             activityInfo.setActivityAverageLeadTime((double) (activityInfo.getActivityLeadTime() * 100) / totalLeadTime);
-
             list.add(activityInfo.toJson());
         }
 
