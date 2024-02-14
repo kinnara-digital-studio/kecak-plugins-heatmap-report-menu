@@ -1,4 +1,4 @@
-package com.kinnara.kecakplugins.heatmapreportmenu;
+package com.kinnarastudio.kecakplugins.heatmapreportmenu;
 
 import java.util.ArrayList;
 import java.util.Collection;

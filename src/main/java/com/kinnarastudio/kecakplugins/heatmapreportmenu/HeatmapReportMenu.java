@@ -1,4 +1,4 @@
-package com.kinnara.kecakplugins.heatmapreportmenu;
+package com.kinnarastudio.kecakplugins.heatmapreportmenu;
 
 import com.kinnarastudio.commons.Try;
 import com.kinnarastudio.commons.jsonstream.JSONCollectors;

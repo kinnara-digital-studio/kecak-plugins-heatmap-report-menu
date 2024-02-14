@@ -1,4 +1,4 @@
-package com.kinnara.kecakplugins.heatmapreportmenu;
+package com.kinnarastudio.kecakplugins.heatmapreportmenu;
 
 public class RestApiException extends Exception {
     private final int httpErrorCode;

@@ -1,4 +1,4 @@
-package com.kinnara.kecakplugins.heatmapreportmenu;
+package com.kinnarastudio.kecakplugins.heatmapreportmenu;
 
 import java.util.Date;
 import java.util.LinkedHashMap;
